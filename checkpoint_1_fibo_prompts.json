@@ -1,0 +1,121 @@
+{
+  "checkpoint_id": 1,
+  "scene_description": "The scene opens with an establishing shot of a rain-soaked cyberpunk city at night, filled with neon lights and holographic ads. Jack walks through the crowded street, his AR display showing incoming messages, and then a holographic route appears in his vision.",
+  "duration_sec": 8,
+  "visual_style": {
+    "lighting_style": "High contrast, dramatic chiaroscuro, strong neon glows (blues, purples, reds), practical light sources from holograms and screens, often backlighting characters or objects to create silhouettes.",
+    "color_palette": "Dominant cool tones (deep blues, purples, teals) contrasted with vibrant neon accents (electric pinks, oranges, greens, reds for alarms). Metallic grays and dark blacks for structures, with occasional warm glows from internal light sources.",
+    "camera_style": "Cinematic, wide-angle shots for establishing environments, medium shots for character interactions, handheld feel for action sequences, dynamic camera movements (dolly, crane, tracking) to emphasize scale and movement. Low angles to emphasize towering structures and high angles for vulnerability. Use of shallow depth of field for character focus.",
+    "environment_theme": "Dystopian cyberpunk city, technologically advanced but gritty, rain-soaked, and densely populated. Interiors are sleek, futuristic, high-tech data centers with glowing server racks and holographic interfaces, maintaining a sense of sterile power.",
+    "artistic_direction": "Gritty realism mixed with futuristic spectacle. A sense of urgency, danger, and high stakes. Neo-noir influences with a focus on shadow play and reflective surfaces. Emphasize the contrast between human vulnerability and overwhelming technology."
+  },
+  "fibo_start_frame": {
+    "short_description": "A wide, cinematic shot of a rain-slicked cyberpunk city street at night, towering skyscrapers adorned with flickering holographic advertisements, with flying vehicles streaking across the sky.",
+    "objects": [
+      {
+        "description": "Towering skyscrapers, wet and reflective, covered in intricate, glowing circuit-like patterns and digital screens.",
+        "location": "Dominating the background and mid-ground, receding into the misty distance.",
+        "relationship": "Forming a canyon-like urban environment.",
+        "relative_size": "Massive, dwarfing any potential human scale.",
+        "shape_and_color": "Angular, dark metallic grays and blacks, illuminated by vibrant neon blues, purples, and electric pinks from ads.",
+        "texture": "Smooth, wet metal and glass, reflecting light.",
+        "appearance_details": "Rain streaks down their surfaces.",
+        "pose": "Static, imposing.",
+        "expression": "N/A",
+        "orientation": "Vertical, reaching upwards."
+      },
+      {
+        "description": "Holographic advertisements, dynamic and brightly colored, depicting futuristic products or abstract art.",
+        "location": "Projected onto the sides of buildings and floating mid-air.",
+        "relationship": "Interspersed among the buildings, creating visual clutter and light sources.",
+        "relative_size": "Large, some spanning multiple stories.",
+        "shape_and_color": "Varying geometric shapes, vibrant blues, greens, reds, and yellows.",
+        "texture": "Shimmering, ethereal light.",
+        "appearance_details": "Flickering and subtly animating.",
+        "pose": "Dynamic, floating.",
+        "expression": "N/A",
+        "orientation": "Facing the viewer."
+      },
+      {
+        "description": "Flying cars (hovercrafts), sleek and futuristic, with glowing headlights and taillights.",
+        "location": "Streaking across the upper parts of the frame, above the street level.",
+        "relationship": "Adding to the sense of a busy, advanced city.",
+        "relative_size": "Small to medium, appearing distant.",
+        "shape_and_color": "Aerodynamic, dark metallic, with bright white and red lights.",
+        "texture": "Smooth, reflective.",
+        "appearance_details": "Leaving faint light trails.",
+        "pose": "In motion.",
+        "expression": "N/A",
+        "orientation": "Moving horizontally across the frame."
+      }
+    ],
+    "background_setting": "A vast, sprawling cyberpunk metropolis at night, perpetually wet from rain, with a low-hanging, misty atmosphere.",
+    "lighting": "Dominant neon lighting from advertisements and streetlights, creating strong reflections on wet surfaces. Overall dark, high-contrast, with pockets of intense color.",
+    "aesthetics": {
+      "composition": "Rule of thirds, with towering buildings creating strong vertical lines. The street recedes into the distance, drawing the eye.",
+      "color_scheme": "Deep blues, purples, and blacks, punctuated by electric pinks, greens, and yellows.",
+      "mood_atmosphere": "Dystopian, overwhelming, visually stimulating, slightly melancholic due to the rain."
+    },
+    "photographic_characteristics": {
+      "depth_of_field": "Deep focus, showing the vastness of the city.",
+      "camera_angle": "High angle, looking down slightly on the street, emphasizing the scale of the buildings.",
+      "lens_focal_length": "Wide-angle lens (e.g., 24mm) to capture the expansive environment."
+    },
+    "style_medium": "Photorealistic, cinematic, cyberpunk aesthetic."
+  },
+  "fibo_end_frame": {
+    "short_description": "A medium shot of Jack walking through a crowded, neon-lit street, rain reflecting off his leather jacket. A subtle holographic path begins to materialize in his field of vision, visible as a faint blue overlay.",
+    "objects": [
+      {
+        "description": "Jack (30s), wearing a dark, worn leather jacket, dark trousers, and sturdy boots. His cybernetic arm is subtly visible, integrated seamlessly. His face is determined, slightly obscured by the rain.",
+        "location": "Center-left of the frame, walking towards the right.",
+        "relationship": "Part of the bustling crowd, but visually distinct.",
+        "relative_size": "Dominant figure in the foreground.",
+        "shape_and_color": "Lean, athletic build. Jacket is dark brown/black, slightly wet. Cybernetic arm is metallic gray with subtle blue energy lines.",
+        "texture": "Wet leather, metallic sheen on arm.",
+        "appearance_details": "Raindrops glisten on his jacket and hair. A faint, almost imperceptible AR overlay is visible over his eyes, showing text messages.",
+        "pose": "Striding purposefully, head slightly down.",
+        "expression": "Focused, slightly weary.",
+        "orientation": "Walking away from the viewer, looking slightly to the right."
+      },
+      {
+        "description": "Crowd of diverse, futuristic pedestrians, some with glowing accessories or cybernetic implants.",
+        "location": "Filling the mid-ground and background, moving in various directions.",
+        "relationship": "Surrounding Jack, creating a sense of a busy, indifferent city.",
+        "relative_size": "Smaller than Jack, receding.",
+        "shape_and_color": "Varied, dark clothing with occasional bright neon accents.",
+        "texture": "Wet fabrics, reflective surfaces.",
+        "appearance_details": "Blurred by motion and rain.",
+        "pose": "Walking, talking, interacting.",
+        "expression": "Indistinct.",
+        "orientation": "Varied."
+      },
+      {
+        "description": "Holographic path, a translucent blue grid-like projection.",
+        "location": "Starting to materialize directly in front of Jack's feet, extending a short distance.",
+        "relationship": "Guiding Jack's movement.",
+        "relative_size": "Small, confined to the ground.",
+        "shape_and_color": "Translucent electric blue, glowing softly.",
+        "texture": "Ethereal, shimmering light.",
+        "appearance_details": "Faintly visible, just forming.",
+        "pose": "Projected onto the wet pavement.",
+        "expression": "N/A",
+        "orientation": "Leading forward."
+      }
+    ],
+    "background_setting": "A bustling, neon-drenched cyberpunk street, wet from rain, with blurred figures and distant towering buildings.",
+    "lighting": "Backlit by distant neon signs, creating a rim light on Jack. Streetlights cast pools of light and shadow. The holographic path emits a soft blue glow.",
+    "aesthetics": {
+      "composition": "Jack is positioned off-center, creating dynamic leading lines with the street and holographic path.",
+      "color_scheme": "Cool blues and purples dominate, with Jack's dark attire providing contrast. The holographic path adds a distinct electric blue.",
+      "mood_atmosphere": "Purposeful, slightly isolated despite the crowd, technologically integrated."
+    },
+    "photographic_characteristics": {
+      "depth_of_field": "Shallow depth of field, focusing on Jack and the immediate foreground, blurring the crowd.",
+      "camera_angle": "Medium shot, eye-level, slightly tracking Jack's movement.",
+      "lens_focal_length": "Standard lens (e.g., 50mm) for a natural perspective."
+    },
+    "style_medium": "Photorealistic, cinematic, cyberpunk aesthetic."
+  },
+  "video_generation_notes": "Transition from a wide establishing shot to a medium tracking shot of Jack. The holographic path should subtly appear and solidify in front of him, guiding his steps. Maintain consistent rain and neon reflections."
+}
