@@ -1,0 +1,1160 @@
+{
+ "Description": "FIBO Video Director Backend - FastAPI on ECS Fargate",
+ "Resources": {
+  "FiboVpc097DFAAB": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.0.0.0/16",
+    "EnableDnsHostnames": true,
+    "EnableDnsSupport": true,
+    "InstanceTenancy": "default",
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/Resource"
+   }
+  },
+  "FiboVpcPublicSubnet1Subnet0749DCA0": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": "us-east-1a",
+    "CidrBlock": "10.0.0.0/18",
+    "MapPublicIpOnLaunch": true,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Public"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Public"
+     },
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1/Subnet"
+   }
+  },
+  "FiboVpcPublicSubnet1RouteTableDB443668": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1/RouteTable"
+   }
+  },
+  "FiboVpcPublicSubnet1RouteTableAssociation41322CE1": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "FiboVpcPublicSubnet1RouteTableDB443668"
+    },
+    "SubnetId": {
+     "Ref": "FiboVpcPublicSubnet1Subnet0749DCA0"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1/RouteTableAssociation"
+   }
+  },
+  "FiboVpcPublicSubnet1DefaultRouteE31F83EE": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "GatewayId": {
+     "Ref": "FiboVpcIGW3F44BF65"
+    },
+    "RouteTableId": {
+     "Ref": "FiboVpcPublicSubnet1RouteTableDB443668"
+    }
+   },
+   "DependsOn": [
+    "FiboVpcVPCGWBD2F22BD"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1/DefaultRoute"
+   }
+  },
+  "FiboVpcPublicSubnet1EIP4B5F0972": {
+   "Type": "AWS::EC2::EIP",
+   "Properties": {
+    "Domain": "vpc",
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1/EIP"
+   }
+  },
+  "FiboVpcPublicSubnet1NATGatewayFFED1954": {
+   "Type": "AWS::EC2::NatGateway",
+   "Properties": {
+    "AllocationId": {
+     "Fn::GetAtt": [
+      "FiboVpcPublicSubnet1EIP4B5F0972",
+      "AllocationId"
+     ]
+    },
+    "SubnetId": {
+     "Ref": "FiboVpcPublicSubnet1Subnet0749DCA0"
+    },
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1"
+     }
+    ]
+   },
+   "DependsOn": [
+    "FiboVpcPublicSubnet1DefaultRouteE31F83EE",
+    "FiboVpcPublicSubnet1RouteTableAssociation41322CE1"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet1/NATGateway"
+   }
+  },
+  "FiboVpcPublicSubnet2Subnet3C1CBF5C": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": "us-east-1b",
+    "CidrBlock": "10.0.64.0/18",
+    "MapPublicIpOnLaunch": true,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Public"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Public"
+     },
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet2/Subnet"
+   }
+  },
+  "FiboVpcPublicSubnet2RouteTable682A429D": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet2/RouteTable"
+   }
+  },
+  "FiboVpcPublicSubnet2RouteTableAssociationF45E7C6A": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "FiboVpcPublicSubnet2RouteTable682A429D"
+    },
+    "SubnetId": {
+     "Ref": "FiboVpcPublicSubnet2Subnet3C1CBF5C"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet2/RouteTableAssociation"
+   }
+  },
+  "FiboVpcPublicSubnet2DefaultRoute50FAC093": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "GatewayId": {
+     "Ref": "FiboVpcIGW3F44BF65"
+    },
+    "RouteTableId": {
+     "Ref": "FiboVpcPublicSubnet2RouteTable682A429D"
+    }
+   },
+   "DependsOn": [
+    "FiboVpcVPCGWBD2F22BD"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PublicSubnet2/DefaultRoute"
+   }
+  },
+  "FiboVpcPrivateSubnet1Subnet0A52345D": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": "us-east-1a",
+    "CidrBlock": "10.0.128.0/18",
+    "MapPublicIpOnLaunch": false,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Private"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Private"
+     },
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet1/Subnet"
+   }
+  },
+  "FiboVpcPrivateSubnet1RouteTable2365C772": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet1/RouteTable"
+   }
+  },
+  "FiboVpcPrivateSubnet1RouteTableAssociation7A35A850": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "FiboVpcPrivateSubnet1RouteTable2365C772"
+    },
+    "SubnetId": {
+     "Ref": "FiboVpcPrivateSubnet1Subnet0A52345D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet1/RouteTableAssociation"
+   }
+  },
+  "FiboVpcPrivateSubnet1DefaultRouteF9EE29A8": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "NatGatewayId": {
+     "Ref": "FiboVpcPublicSubnet1NATGatewayFFED1954"
+    },
+    "RouteTableId": {
+     "Ref": "FiboVpcPrivateSubnet1RouteTable2365C772"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet1/DefaultRoute"
+   }
+  },
+  "FiboVpcPrivateSubnet2Subnet15D1CAF0": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": "us-east-1b",
+    "CidrBlock": "10.0.192.0/18",
+    "MapPublicIpOnLaunch": false,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Private"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Private"
+     },
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet2/Subnet"
+   }
+  },
+  "FiboVpcPrivateSubnet2RouteTableDA385498": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet2/RouteTable"
+   }
+  },
+  "FiboVpcPrivateSubnet2RouteTableAssociation75604417": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "FiboVpcPrivateSubnet2RouteTableDA385498"
+    },
+    "SubnetId": {
+     "Ref": "FiboVpcPrivateSubnet2Subnet15D1CAF0"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet2/RouteTableAssociation"
+   }
+  },
+  "FiboVpcPrivateSubnet2DefaultRoute8A5872D6": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "NatGatewayId": {
+     "Ref": "FiboVpcPublicSubnet1NATGatewayFFED1954"
+    },
+    "RouteTableId": {
+     "Ref": "FiboVpcPrivateSubnet2RouteTableDA385498"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/PrivateSubnet2/DefaultRoute"
+   }
+  },
+  "FiboVpcIGW3F44BF65": {
+   "Type": "AWS::EC2::InternetGateway",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "FiboVideoDirectorBackend/FiboVpc"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/IGW"
+   }
+  },
+  "FiboVpcVPCGWBD2F22BD": {
+   "Type": "AWS::EC2::VPCGatewayAttachment",
+   "Properties": {
+    "InternetGatewayId": {
+     "Ref": "FiboVpcIGW3F44BF65"
+    },
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboVpc/VPCGW"
+   }
+  },
+  "FiboFramesBucketFFEFE6FF": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "BucketName": "fibo-frames-cache-476114109859-us-east-1",
+    "CorsConfiguration": {
+     "CorsRules": [
+      {
+       "AllowedHeaders": [
+        "*"
+       ],
+       "AllowedMethods": [
+        "GET",
+        "PUT"
+       ],
+       "AllowedOrigins": [
+        "*"
+       ],
+       "MaxAge": 3600
+      }
+     ]
+    },
+    "LifecycleConfiguration": {
+     "Rules": [
+      {
+       "ExpirationInDays": 30,
+       "Id": "ExpireOldFrames",
+       "Prefix": "fibo-frames/",
+       "Status": "Enabled"
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboFramesBucket/Resource"
+   }
+  },
+  "FiboApiSecrets23491839": {
+   "Type": "AWS::SecretsManager::Secret",
+   "Properties": {
+    "Description": "API keys for FIBO Video Director",
+    "GenerateSecretString": {
+     "GenerateStringKey": "placeholder",
+     "SecretStringTemplate": "{\"GOOGLE_API_KEY\":\"\",\"FAL_KEY\":\"\"}"
+    },
+    "Name": "fibo-video-director/api-keys"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboApiSecrets/Resource"
+   }
+  },
+  "FiboCluster13A0EC9F": {
+   "Type": "AWS::ECS::Cluster",
+   "Properties": {
+    "ClusterSettings": [
+     {
+      "Name": "containerInsights",
+      "Value": "enabled"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboCluster/Resource"
+   }
+  },
+  "FiboTaskRole0A70C6A0": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboTaskRole/Resource"
+   }
+  },
+  "FiboTaskRoleDefaultPolicy5C4D9875": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:Abort*",
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:GetObject*",
+        "s3:List*",
+        "s3:PutObject",
+        "s3:PutObjectLegalHold",
+        "s3:PutObjectRetention",
+        "s3:PutObjectTagging",
+        "s3:PutObjectVersionTagging"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FiboFramesBucketFFEFE6FF",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FiboFramesBucketFFEFE6FF",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "FiboApiSecrets23491839"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "FiboTaskRoleDefaultPolicy5C4D9875",
+    "Roles": [
+     {
+      "Ref": "FiboTaskRole0A70C6A0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboTaskRole/DefaultPolicy/Resource"
+   }
+  },
+  "FiboBackendLogs46B91BA8": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/fibo-video-director",
+    "RetentionInDays": 14
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendLogs/Resource"
+   }
+  },
+  "FiboBackendServiceLBF7296CB5": {
+   "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+   "Properties": {
+    "LoadBalancerAttributes": [
+     {
+      "Key": "deletion_protection.enabled",
+      "Value": "false"
+     }
+    ],
+    "Scheme": "internet-facing",
+    "SecurityGroups": [
+     {
+      "Fn::GetAtt": [
+       "FiboBackendServiceLBSecurityGroup2B81319A",
+       "GroupId"
+      ]
+     }
+    ],
+    "Subnets": [
+     {
+      "Ref": "FiboVpcPublicSubnet1Subnet0749DCA0"
+     },
+     {
+      "Ref": "FiboVpcPublicSubnet2Subnet3C1CBF5C"
+     }
+    ],
+    "Type": "application"
+   },
+   "DependsOn": [
+    "FiboVpcPublicSubnet1DefaultRouteE31F83EE",
+    "FiboVpcPublicSubnet1RouteTableAssociation41322CE1",
+    "FiboVpcPublicSubnet2DefaultRoute50FAC093",
+    "FiboVpcPublicSubnet2RouteTableAssociationF45E7C6A"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/LB/Resource"
+   }
+  },
+  "FiboBackendServiceLBSecurityGroup2B81319A": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Automatically created Security Group for ELB FiboVideoDirectorBackendFiboBackendServiceLB344656C4",
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow from anyone on port 80",
+      "FromPort": 80,
+      "IpProtocol": "tcp",
+      "ToPort": 80
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/LB/SecurityGroup/Resource"
+   }
+  },
+  "FiboBackendServiceLBSecurityGrouptoFiboVideoDirectorBackendFiboBackendServiceSecurityGroupD7F70C6980004623C604": {
+   "Type": "AWS::EC2::SecurityGroupEgress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "DestinationSecurityGroupId": {
+     "Fn::GetAtt": [
+      "FiboBackendServiceSecurityGroup20DDF33D",
+      "GroupId"
+     ]
+    },
+    "FromPort": 8000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "FiboBackendServiceLBSecurityGroup2B81319A",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "ToPort": 8000
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/LB/SecurityGroup/to FiboVideoDirectorBackendFiboBackendServiceSecurityGroupD7F70C69:8000"
+   }
+  },
+  "FiboBackendServiceLBPublicListenerEF8B72AA": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "DefaultActions": [
+     {
+      "TargetGroupArn": {
+       "Ref": "FiboBackendServiceLBPublicListenerECSGroup22EC92B6"
+      },
+      "Type": "forward"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "FiboBackendServiceLBF7296CB5"
+    },
+    "Port": 80,
+    "Protocol": "HTTP"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/LB/PublicListener/Resource"
+   }
+  },
+  "FiboBackendServiceLBPublicListenerECSGroup22EC92B6": {
+   "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+   "Properties": {
+    "HealthCheckIntervalSeconds": 30,
+    "HealthCheckPath": "/",
+    "HealthCheckTimeoutSeconds": 10,
+    "Matcher": {
+     "HttpCode": "200"
+    },
+    "Port": 80,
+    "Protocol": "HTTP",
+    "TargetGroupAttributes": [
+     {
+      "Key": "stickiness.enabled",
+      "Value": "false"
+     }
+    ],
+    "TargetType": "ip",
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/LB/PublicListener/ECSGroup/Resource"
+   }
+  },
+  "FiboBackendServiceTaskDef1D9D52E3": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "FIBO_S3_BUCKET",
+        "Value": {
+         "Ref": "FiboFramesBucketFFEFE6FF"
+        }
+       },
+       {
+        "Name": "AWS_DEFAULT_REGION",
+        "Value": "us-east-1"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Sub": "476114109859.dkr.ecr.us-east-1.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-476114109859-us-east-1:2503dffbdad6c075669151f2e8221dabad22ddd9b327b2a98c70632a1c2b7ef7"
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "FiboBackendLogs46B91BA8"
+        },
+        "awslogs-stream-prefix": "fibo-backend",
+        "awslogs-region": "us-east-1"
+       }
+      },
+      "Name": "web",
+      "PortMappings": [
+       {
+        "ContainerPort": 8000,
+        "Protocol": "tcp"
+       }
+      ],
+      "Secrets": [
+       {
+        "Name": "GOOGLE_API_KEY",
+        "ValueFrom": {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Ref": "FiboApiSecrets23491839"
+           },
+           ":GOOGLE_API_KEY::"
+          ]
+         ]
+        }
+       },
+       {
+        "Name": "FAL_KEY",
+        "ValueFrom": {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Ref": "FiboApiSecrets23491839"
+           },
+           ":FAL_KEY::"
+          ]
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "Cpu": "512",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "FiboBackendServiceTaskDefExecutionRoleD285333B",
+      "Arn"
+     ]
+    },
+    "Family": "FiboVideoDirectorBackendFiboBackendServiceTaskDefAB803E82",
+    "Memory": "1024",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "FiboTaskRole0A70C6A0",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/TaskDef/Resource"
+   }
+  },
+  "FiboBackendServiceTaskDefExecutionRoleD285333B": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/TaskDef/ExecutionRole/Resource"
+   }
+  },
+  "FiboBackendServiceTaskDefExecutionRoleDefaultPolicyBB99069A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer"
+       ],
+       "Effect": "Allow",
+       "Resource": "arn:aws:ecr:us-east-1:476114109859:repository/cdk-hnb659fds-container-assets-476114109859-us-east-1"
+      },
+      {
+       "Action": "ecr:GetAuthorizationToken",
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "FiboBackendLogs46B91BA8",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "FiboApiSecrets23491839"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "FiboBackendServiceTaskDefExecutionRoleDefaultPolicyBB99069A",
+    "Roles": [
+     {
+      "Ref": "FiboBackendServiceTaskDefExecutionRoleD285333B"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/TaskDef/ExecutionRole/DefaultPolicy/Resource"
+   }
+  },
+  "FiboBackendService9B321784": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "FiboCluster13A0EC9F"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "HealthCheckGracePeriodSeconds": 60,
+    "LaunchType": "FARGATE",
+    "LoadBalancers": [
+     {
+      "ContainerName": "web",
+      "ContainerPort": 8000,
+      "TargetGroupArn": {
+       "Ref": "FiboBackendServiceLBPublicListenerECSGroup22EC92B6"
+      }
+     }
+    ],
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "ENABLED",
+      "SecurityGroups": [
+       {
+        "Fn::GetAtt": [
+         "FiboBackendServiceSecurityGroup20DDF33D",
+         "GroupId"
+        ]
+       }
+      ],
+      "Subnets": [
+       {
+        "Ref": "FiboVpcPublicSubnet1Subnet0749DCA0"
+       },
+       {
+        "Ref": "FiboVpcPublicSubnet2Subnet3C1CBF5C"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "FiboBackendServiceTaskDef1D9D52E3"
+    }
+   },
+   "DependsOn": [
+    "FiboBackendServiceLBPublicListenerECSGroup22EC92B6",
+    "FiboBackendServiceLBPublicListenerEF8B72AA",
+    "FiboTaskRoleDefaultPolicy5C4D9875",
+    "FiboTaskRole0A70C6A0"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/Service/Service"
+   }
+  },
+  "FiboBackendServiceSecurityGroup20DDF33D": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "FiboVideoDirectorBackend/FiboBackendService/Service/SecurityGroup",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound traffic by default",
+      "IpProtocol": "-1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "FiboVpc097DFAAB"
+    }
+   },
+   "DependsOn": [
+    "FiboTaskRoleDefaultPolicy5C4D9875",
+    "FiboTaskRole0A70C6A0"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/Service/SecurityGroup/Resource"
+   }
+  },
+  "FiboBackendServiceSecurityGroupfromFiboVideoDirectorBackendFiboBackendServiceLBSecurityGroup4010E6088000AD10B4AF": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "FromPort": 8000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "FiboBackendServiceSecurityGroup20DDF33D",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "FiboBackendServiceLBSecurityGroup2B81319A",
+      "GroupId"
+     ]
+    },
+    "ToPort": 8000
+   },
+   "DependsOn": [
+    "FiboTaskRoleDefaultPolicy5C4D9875",
+    "FiboTaskRole0A70C6A0"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/Service/SecurityGroup/from FiboVideoDirectorBackendFiboBackendServiceLBSecurityGroup4010E608:8000"
+   }
+  },
+  "FiboBackendServiceTaskCountTarget6E670BEF": {
+   "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+   "Properties": {
+    "MaxCapacity": 4,
+    "MinCapacity": 1,
+    "ResourceId": {
+     "Fn::Join": [
+      "",
+      [
+       "service/",
+       {
+        "Ref": "FiboCluster13A0EC9F"
+       },
+       "/",
+       {
+        "Fn::GetAtt": [
+         "FiboBackendService9B321784",
+         "Name"
+        ]
+       }
+      ]
+     ]
+    },
+    "RoleARN": "arn:aws:iam::476114109859:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService",
+    "ScalableDimension": "ecs:service:DesiredCount",
+    "ServiceNamespace": "ecs"
+   },
+   "DependsOn": [
+    "FiboTaskRoleDefaultPolicy5C4D9875",
+    "FiboTaskRole0A70C6A0"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/Service/TaskCount/Target/Resource"
+   }
+  },
+  "FiboBackendServiceTaskCountTargetCpuScalingF4755DC0": {
+   "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+   "Properties": {
+    "PolicyName": "FiboVideoDirectorBackendFiboBackendServiceTaskCountTargetCpuScaling742EA941",
+    "PolicyType": "TargetTrackingScaling",
+    "ScalingTargetId": {
+     "Ref": "FiboBackendServiceTaskCountTarget6E670BEF"
+    },
+    "TargetTrackingScalingPolicyConfiguration": {
+     "PredefinedMetricSpecification": {
+      "PredefinedMetricType": "ECSServiceAverageCPUUtilization"
+     },
+     "ScaleInCooldown": 60,
+     "ScaleOutCooldown": 60,
+     "TargetValue": 70
+    }
+   },
+   "DependsOn": [
+    "FiboTaskRoleDefaultPolicy5C4D9875",
+    "FiboTaskRole0A70C6A0"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/FiboBackendService/Service/TaskCount/Target/CpuScaling/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/31R0W7bMAz8lr4r2uZ8QZJ2RYBiM+KgrwGjsCpnWTJEKkFg+N8H2UmcdsWeeDwd6fOx0MW80MUDnHhmDvXM0V53lYCpFZx416EpdPfaGrV686/lSpVp78hUae9RMjehTUiCW9g7nPiJWzAHQyAU/E2cwdO6zOUXyDMInuCsykhHEJwWr71g9HgTjE4u3UIEzHuDXlSFJkWS83MMqR08/Jd4shGZ/6HXfuB7xXPdLZOpRxMj6hWjiSjcgAeLUXfV0F+2xKxAw7pbucSCMfNX+BOihZwG14/4Rp6uWXxmghcgj/GOu8xWGI9kxnwvsDLgcr55ySokPxiIO2BGYf0YTI1x3YDNB0DJb3qDbWCSEM9LYFQEje42YTzbUMvgyAw5j6hXLljW3UuwtyivePjfXQuSb8R60baOzHDmlwCHJTjwBg+f/KMDFjIuwGE/KMjbY6G7r6fj+L27/l5HLOgvmiu+e99CtCg323dtr2CSQZLABhx5q7sp0ywe0v7IjGUbwdTkbTXOTal9IPpebZBDigbVcINKwJK3Wfg7SZukV+VZ3oP/Ntc/Cv394Q8TzWLyQg3qzVj/ArCoINOnAwAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FiboVideoDirectorBackend/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "FiboBackendServiceLoadBalancerDNSB65A330C": {
+   "Value": {
+    "Fn::GetAtt": [
+     "FiboBackendServiceLBF7296CB5",
+     "DNSName"
+    ]
+   }
+  },
+  "FiboBackendServiceServiceURLBD1A7340": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "http://",
+      {
+       "Fn::GetAtt": [
+        "FiboBackendServiceLBF7296CB5",
+        "DNSName"
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  "BackendUrl": {
+   "Description": "Backend API URL - use this in Amplify REACT_APP_API_URL",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "http://",
+      {
+       "Fn::GetAtt": [
+        "FiboBackendServiceLBF7296CB5",
+        "DNSName"
+       ]
+      }
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "FiboBackendUrl"
+   }
+  },
+  "FramesBucketName": {
+   "Description": "S3 bucket for frame caching",
+   "Value": {
+    "Ref": "FiboFramesBucketFFEFE6FF"
+   },
+   "Export": {
+    "Name": "FiboFramesBucket"
+   }
+  },
+  "SecretsArn": {
+   "Description": "Secrets Manager ARN - update with your API keys",
+   "Value": {
+    "Ref": "FiboApiSecrets23491839"
+   },
+   "Export": {
+    "Name": "FiboSecretsArn"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

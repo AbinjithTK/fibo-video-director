@@ -46,20 +46,22 @@ class AgentCoreClient:
             Dict containing the video production plan with checkpoints
         """
         try:
-            # Prepare payload for AgentCore agent
-            payload = {
-                "script_text": script_text,
-                "api_key": self.api_key
-            }
+            # Prepare the input message for AgentCore agent
+            input_message = f"""Please analyze this movie script and create a FIBO video production plan:
+
+Script:
+{script_text}
+
+Please provide a structured video production plan with checkpoints, visual style, and FIBO prompts for each scene."""
             
             print(f"🤖 Calling AgentCore agent: {self.agent_arn}")
             
-            # Call the AgentCore agent
+            # Call the AgentCore agent using bedrock-agent-runtime
             response = self.client.invoke_agent(
                 agentId=self.agent_arn.split('/')[-1],  # Extract agent ID from ARN
                 agentAliasId='TSTALIASID',  # Default test alias
                 sessionId=f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                inputText=json.dumps(payload)
+                inputText=input_message
             )
             
             # Process the response
@@ -70,7 +72,10 @@ class AgentCoreClient:
             
         except Exception as e:
             print(f"❌ AgentCore agent error: {e}")
-            raise Exception(f"AgentCore processing failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            # Return fallback response instead of raising
+            return self._create_fallback_response(str(e))
     
     def _process_agent_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
         """

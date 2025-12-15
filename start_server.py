@@ -77,13 +77,15 @@ def main():
         print("\nPress Ctrl+C to stop the server")
         print("=" * 50)
         
+        # Get port from environment (App Runner sets this)
+        port = int(os.environ.get("PORT", 8000))
+        
         uvicorn.run(
             app,
             host="0.0.0.0",
-            port=8000,
-            reload=True,
-            reload_dirs=[str(Path.cwd())],
-            reload_includes=["*.py"]
+            port=port,
+            reload=False,  # Disable reload in production
+            access_log=True
         )
         
     except ImportError as e:

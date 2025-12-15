@@ -1,0 +1,37 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "c031e2f55ea66c38cde67cb615cabc7160fbf700954f97364d784acf5f3ed987": {
+      "displayName": "FiboVideoDirectorBackend Template",
+      "source": {
+        "path": "FiboVideoDirectorBackend.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "476114109859-us-east-1-1e2bd78c": {
+          "bucketName": "cdk-hnb659fds-assets-476114109859-us-east-1",
+          "objectKey": "c031e2f55ea66c38cde67cb615cabc7160fbf700954f97364d784acf5f3ed987.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::476114109859:role/cdk-hnb659fds-file-publishing-role-476114109859-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {
+    "2503dffbdad6c075669151f2e8221dabad22ddd9b327b2a98c70632a1c2b7ef7": {
+      "displayName": "FiboBackendImage",
+      "source": {
+        "directory": "asset.2503dffbdad6c075669151f2e8221dabad22ddd9b327b2a98c70632a1c2b7ef7",
+        "dockerFile": "Dockerfile"
+      },
+      "destinations": {
+        "476114109859-us-east-1-20483562": {
+          "repositoryName": "cdk-hnb659fds-container-assets-476114109859-us-east-1",
+          "imageTag": "2503dffbdad6c075669151f2e8221dabad22ddd9b327b2a98c70632a1c2b7ef7",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::476114109859:role/cdk-hnb659fds-image-publishing-role-476114109859-us-east-1"
+        }
+      }
+    }
+  }
+}

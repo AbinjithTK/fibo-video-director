@@ -1,411 +1,324 @@
 #!/usr/bin/env python3
 """
-FIBO Video Director System
+FIBO Video Director
 
-Specialized AI Director for FIBO-only video generation pipeline.
-Converts movie scripts into checkpoint-based video segments with 
-consistent FIBO structured JSON prompts for frame generation.
+Core class for processing movie scripts and generating FIBO video production plans.
 """
 
-import os
 import json
-from typing import Dict, List, Any
-from strands import Agent
-from strands.models.gemini import GeminiModel
+import uuid
+from typing import Dict, List, Any, Optional
+from datetime import datetime
+import google.generativeai as genai
 
-# System prompt optimized for FIBO video generation
-FIBO_DIRECTOR_PROMPT = """You are the **FIBO Video Director** - an AI specialist for converting movie scripts into FIBO-native video production plans.
 
-## YOUR MISSION
-Transform movie scripts into checkpoint-based video segments where each checkpoint generates consistent FIBO structured JSON prompts for frame generation.
+class FIBOVideoDirector:
+    """Main director class for FIBO video production planning."""
+    
+    def __init__(self, google_api_key: str):
+        """
+        Initialize the FIBO Video Director.
+        
+        Args:
+            google_api_key: Google API key for Gemini
+        """
+        self.google_api_key = google_api_key
+        
+        # Configure Gemini
+        genai.configure(api_key=google_api_key)
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        print("✅ FIBO Video Director initialized with Gemini 2.5 Flash")
+    
+    def create_video_plan(self, script_text: str) -> Dict[str, Any]:
+        """
+        Create a video production plan from a movie script.
+        
+        Args:
+            script_text: The movie script text
+            
+        Returns:
+            Dict containing the video production plan
+        """
+        try:
+            print(f"📝 Processing script ({len(script_text)} characters)")
+            
+            # Generate video plan using Gemini
+            prompt = self._create_analysis_prompt(script_text)
+            response = self.model.generate_content(prompt)
+            
+            # Parse the response
+            video_plan = self._parse_gemini_response(response.text, script_text)
+            
+            print(f"✅ Video plan created with {len(video_plan.get('checkpoints', []))} checkpoints")
+            return video_plan
+            
+        except Exception as e:
+            print(f"❌ Error creating video plan: {e}")
+            return self._create_fallback_plan(script_text)
+    
+    def export_checkpoint_fibo_prompts(self, video_plan: Dict[str, Any], checkpoint_id: int) -> Dict[str, Any]:
+        """
+        Export FIBO structured prompts for a specific checkpoint.
+        
+        Args:
+            video_plan: The video production plan
+            checkpoint_id: The checkpoint ID to export
+            
+        Returns:
+            Dict containing checkpoint data and FIBO prompts
+        """
+        try:
+            # Find the checkpoint
+            checkpoint = None
+            for cp in video_plan.get('checkpoints', []):
+                if cp['checkpoint_id'] == checkpoint_id:
+                    checkpoint = cp
+                    break
+            
+            if not checkpoint:
+                return {'error': f'Checkpoint {checkpoint_id} not found'}
+            
+            return {
+                'checkpoint_id': checkpoint_id,
+                'scene_description': checkpoint.get('scene_description', ''),
+                'duration_sec': checkpoint.get('duration_sec', 8),
+                'visual_style': video_plan.get('visual_style', {}),
+                'fibo_start_frame': checkpoint.get('fibo_start_frame', {}),
+                'fibo_end_frame': checkpoint.get('fibo_end_frame', {}),
+                'video_generation_notes': checkpoint.get('video_generation_notes', '')
+            }
+            
+        except Exception as e:
+            return {'error': f'Error exporting checkpoint: {str(e)}'}
+    
+    def _create_analysis_prompt(self, script_text: str) -> str:
+        """Create analysis prompt for Gemini."""
+        return f"""Analyze this movie script and create a detailed video production plan for FIBO generation.
 
-## CORE PRINCIPLES
-1. **8-Second Rule**: Break scripts into 8-second video segments (checkpoints)
-2. **FIBO Consistency**: Create detailed structured JSON prompts that maintain visual consistency
-3. **Checkpoint System**: Each segment is a selectable checkpoint for frame generation
-4. **Style Consistency**: Establish and maintain visual style across all segments
+Script:
+{script_text}
 
-## WORKFLOW
-1. **Script Analysis**: Break script into logical 8-second segments
-2. **Style Creation**: Define consistent visual style for the entire production
-3. **Checkpoint Generation**: Create detailed FIBO prompts for each segment
-4. **Frame Specifications**: Generate start_frame and end_frame structured JSON prompts
-
-## OUTPUT FORMAT
-Return ONLY this JSON structure:
-
-{
-  "project_title": "String",
-  "total_duration_sec": 0,
-  "visual_style": {
-    "lighting_style": "Consistent lighting approach for all segments",
-    "color_palette": "Color scheme that maintains throughout",
-    "camera_style": "Camera and lens specifications",
-    "environment_theme": "Overall environmental consistency",
-    "artistic_direction": "Visual aesthetic and mood"
-  },
+Please provide a JSON response with this structure:
+{{
+  "project_title": "Title of the production",
+  "production_id": "unique_id",
+  "total_duration_sec": 16,
+  "visual_style": {{
+    "lighting_style": "Cinematic three-point lighting",
+    "color_palette": "Natural, balanced colors",
+    "camera_style": "50mm lens, f/2.8",
+    "environment_theme": "Professional production environment",
+    "artistic_direction": "Photorealistic, cinematic quality"
+  }},
   "checkpoints": [
-    {
+    {{
       "checkpoint_id": 1,
       "start_time_sec": 0,
       "end_time_sec": 8,
       "duration_sec": 8,
-      "scene_description": "What happens in this 8-second segment",
-      "visual_consistency_notes": "How this maintains the overall style",
-      "fibo_start_frame": {
-        "short_description": "Detailed description of opening frame",
+      "scene_description": "Detailed description of the scene",
+      "is_continuation": false,
+      "visual_consistency_notes": "Notes about visual consistency",
+      "fibo_start_frame": {{
+        "short_description": "Brief description of the start frame",
         "objects": [
-          {
-            "description": "Detailed object description",
+          {{
+            "description": "Main subject or object",
             "location": "Position in frame",
-            "relationship": "Relationship to other objects",
-            "relative_size": "Size within frame",
-            "shape_and_color": "Visual characteristics",
+            "relationship": "Relationship to other elements",
+            "relative_size": "Size relative to frame",
+            "shape_and_color": "Visual appearance",
             "texture": "Surface texture details",
-            "appearance_details": "Specific visual features",
-            "pose": "Object positioning/posture",
-            "expression": "Facial expression if applicable",
+            "appearance_details": "Additional visual details",
+            "pose": "Position or pose",
+            "expression": "Facial expression or mood",
             "orientation": "Direction facing"
-          }
+          }}
         ],
-        "background_setting": "Detailed background description",
-        "lighting": "Specific lighting setup",
-        "aesthetics": {
-          "composition": "Frame composition rules",
-          "color_scheme": "Color palette for this frame",
-          "mood_atmosphere": "Emotional tone"
-        },
-        "photographic_characteristics": {
-          "depth_of_field": "Focus characteristics",
-          "camera_angle": "Camera positioning",
+        "background_setting": "Description of background and environment",
+        "lighting": "Lighting setup and mood",
+        "aesthetics": {{
+          "composition": "Compositional elements",
+          "color_scheme": "Color palette and mood",
+          "mood_atmosphere": "Overall mood and atmosphere"
+        }},
+        "photographic_characteristics": {{
+          "depth_of_field": "DOF settings",
+          "camera_angle": "Camera position and angle",
           "lens_focal_length": "Lens specifications"
-        },
-        "style_medium": "Visual style approach"
-      },
-      "fibo_end_frame": {
-        "short_description": "Detailed description of closing frame",
-        "objects": [
-          {
-            "description": "How objects have changed from start",
-            "location": "New position in frame",
-            "relationship": "Updated relationships",
-            "relative_size": "Size changes if any",
-            "shape_and_color": "Visual characteristics",
-            "texture": "Surface texture details", 
-            "appearance_details": "Specific visual features",
-            "pose": "Final positioning/posture",
-            "expression": "Final facial expression if applicable",
-            "orientation": "Final direction facing"
-          }
-        ],
-        "background_setting": "Background at segment end",
-        "lighting": "Lighting at segment end",
-        "aesthetics": {
-          "composition": "Final frame composition",
-          "color_scheme": "Maintained color palette",
-          "mood_atmosphere": "Emotional progression"
-        },
-        "photographic_characteristics": {
-          "depth_of_field": "Final focus characteristics",
-          "camera_angle": "Final camera positioning", 
-          "lens_focal_length": "Consistent lens specs"
-        },
-        "style_medium": "Consistent visual style"
-      },
-      "video_generation_notes": "Description of movement/transition between frames for reference"
-    }
-  ]
-}
+        }},
+        "style_medium": "Overall style and medium"
+      }},
+      "fibo_end_frame": {{
+        // Same structure as start_frame but for the end of the scene
+      }},
+      "video_generation_notes": "Notes for video generation between frames"
+    }}
+  ],
+  "metadata": {{
+    "agent_system": "FIBO Video Director",
+    "model": "gemini-2.5-flash",
+    "version": "1.0.0"
+  }}
+}}
 
-## FIBO STRUCTURED JSON REQUIREMENTS
-- Use detailed object descriptions with all required fields
-- Maintain consistent lighting and color schemes across segments
-- Ensure visual continuity between checkpoints
-- Create production-ready structured prompts for FIBO generation
-- Focus on photorealistic, cinematic quality descriptions"""
-
-class FIBOVideoDirector:
-    """FIBO-specialized video director for checkpoint-based generation."""
+Create 2 checkpoints of 8 seconds each for a total of 16 seconds. Focus on cinematic quality and smooth transitions between frames."""
     
-    def __init__(self, api_key: str):
-        """Initialize the FIBO video director."""
-        self.api_key = api_key
-        self.agent = self._create_agent()
-    
-    def _create_agent(self):
-        """Create the FIBO director agent."""
-        model = GeminiModel(
-            client_args={"api_key": self.api_key},
-            model_id="gemini-2.5-flash",
-            params={"temperature": 0.3}
-        )
-        
-        return Agent(
-            model=model,
-            system_prompt=FIBO_DIRECTOR_PROMPT
-        )
-    
-    def create_video_plan(self, script_text: str) -> dict:
-        """Create a complete FIBO video production plan with checkpoints.
-        
-        Args:
-            script_text: The movie script to process
-            
-        Returns:
-            Dictionary containing checkpoints and FIBO structured prompts
-        """
+    def _parse_gemini_response(self, response_text: str, script_text: str) -> Dict[str, Any]:
+        """Parse Gemini response into structured video plan."""
         try:
-            prompt = f"Create a FIBO video production plan for this script:\n\n{script_text}"
-            response = self.agent(prompt)
+            # Try to extract JSON from response
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}') + 1
             
-            # Convert response to string and parse JSON
-            response_text = str(response)
-            
-            # Extract JSON from response
-            if "{" in response_text and "}" in response_text:
-                start = response_text.find("{")
-                end = response_text.rfind("}") + 1
-                json_str = response_text[start:end]
-                return json.loads(json_str)
-            else:
-                return self._create_fallback_plan(script_text)
+            if json_start >= 0 and json_end > json_start:
+                json_text = response_text[json_start:json_end]
+                parsed = json.loads(json_text)
                 
-        except Exception as e:
-            print(f"Error creating video plan: {e}")
-            return self._create_fallback_plan(script_text)
+                # Validate and enhance the parsed response
+                return self._validate_and_enhance_plan(parsed, script_text)
+            
+        except json.JSONDecodeError as e:
+            print(f"⚠️ JSON parsing failed: {e}")
+        
+        # Fallback to structured response creation
+        return self._create_structured_plan_from_text(response_text, script_text)
     
-    def _create_fallback_plan(self, script_text: str) -> dict:
-        """Create a basic fallback plan."""
+    def _validate_and_enhance_plan(self, plan: Dict[str, Any], script_text: str) -> Dict[str, Any]:
+        """Validate and enhance the parsed plan."""
+        # Ensure required fields
+        if 'project_title' not in plan:
+            plan['project_title'] = 'FIBO Video Production'
+        
+        if 'production_id' not in plan:
+            plan['production_id'] = f"fibo_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        if 'created_at' not in plan:
+            plan['created_at'] = datetime.now().isoformat()
+        
+        # Ensure visual style
+        if 'visual_style' not in plan:
+            plan['visual_style'] = self._get_default_visual_style()
+        
+        # Validate checkpoints
+        if 'checkpoints' not in plan or not plan['checkpoints']:
+            plan['checkpoints'] = self._create_default_checkpoints()
+        
+        # Ensure each checkpoint has FIBO prompts
+        for checkpoint in plan['checkpoints']:
+            if 'fibo_start_frame' not in checkpoint:
+                checkpoint['fibo_start_frame'] = self._create_default_fibo_prompt(
+                    'start', checkpoint.get('scene_description', 'Scene opening')
+                )
+            if 'fibo_end_frame' not in checkpoint:
+                checkpoint['fibo_end_frame'] = self._create_default_fibo_prompt(
+                    'end', checkpoint.get('scene_description', 'Scene closing')
+                )
+        
+        return plan
+    
+    def _create_structured_plan_from_text(self, response_text: str, script_text: str) -> Dict[str, Any]:
+        """Create structured plan from text response."""
         return {
-            "project_title": "FIBO Generated Video",
-            "total_duration_sec": 8,
-            "visual_style": {
-                "lighting_style": "Cinematic three-point lighting",
-                "color_palette": "Natural, balanced colors",
-                "camera_style": "50mm lens, f/2.8, professional cinematography",
-                "environment_theme": "Realistic, detailed environments",
-                "artistic_direction": "Photorealistic, high-quality production"
-            },
-            "checkpoints": [
-                {
-                    "checkpoint_id": 1,
-                    "start_time_sec": 0,
-                    "end_time_sec": 8,
-                    "duration_sec": 8,
-                    "scene_description": "Single scene from script",
-                    "visual_consistency_notes": "Maintains established visual style",
-                    "fibo_start_frame": self._create_basic_fibo_prompt("Opening frame", script_text[:200]),
-                    "fibo_end_frame": self._create_basic_fibo_prompt("Closing frame", script_text[:200]),
-                    "video_generation_notes": "Smooth transition with natural movement"
-                }
-            ]
+            'project_title': 'FIBO Video Production',
+            'production_id': f"fibo_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'created_at': datetime.now().isoformat(),
+            'total_duration_sec': 16,
+            'visual_style': self._get_default_visual_style(),
+            'checkpoints': self._create_default_checkpoints(),
+            'metadata': {
+                'agent_system': 'FIBO Video Director',
+                'model': 'gemini-2.5-flash',
+                'version': '1.0.0',
+                'raw_response': response_text[:500] + '...' if len(response_text) > 500 else response_text
+            }
         }
     
-    def _create_basic_fibo_prompt(self, frame_type: str, context: str) -> dict:
-        """Create a basic FIBO structured prompt."""
+    def _create_fallback_plan(self, script_text: str) -> Dict[str, Any]:
+        """Create fallback plan when Gemini fails."""
         return {
-            "short_description": f"{frame_type}: {context}",
-            "objects": [
+            'project_title': 'FIBO Fallback Production',
+            'production_id': f"fallback_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'created_at': datetime.now().isoformat(),
+            'total_duration_sec': 16,
+            'visual_style': self._get_default_visual_style(),
+            'checkpoints': self._create_default_checkpoints(),
+            'metadata': {
+                'agent_system': 'Fallback Director',
+                'version': '1.0.0',
+                'script_length': len(script_text)
+            }
+        }
+    
+    def _get_default_visual_style(self) -> Dict[str, Any]:
+        """Get default visual style."""
+        return {
+            'lighting_style': 'Cinematic three-point lighting',
+            'color_palette': 'Natural, balanced colors',
+            'camera_style': '50mm lens, f/2.8',
+            'environment_theme': 'Professional production environment',
+            'artistic_direction': 'Photorealistic, cinematic quality'
+        }
+    
+    def _create_default_checkpoints(self) -> List[Dict[str, Any]]:
+        """Create default checkpoints."""
+        return [
+            {
+                'checkpoint_id': 1,
+                'start_time_sec': 0,
+                'end_time_sec': 8,
+                'duration_sec': 8,
+                'scene_description': 'Opening scene with cinematic introduction',
+                'is_continuation': False,
+                'visual_consistency_notes': 'Maintains cinematic style throughout',
+                'fibo_start_frame': self._create_default_fibo_prompt('start', 'Scene opening'),
+                'fibo_end_frame': self._create_default_fibo_prompt('end', 'Scene transition'),
+                'video_generation_notes': 'Smooth cinematic transition with professional quality'
+            },
+            {
+                'checkpoint_id': 2,
+                'start_time_sec': 8,
+                'end_time_sec': 16,
+                'duration_sec': 8,
+                'scene_description': 'Closing scene with dramatic conclusion',
+                'is_continuation': True,
+                'visual_consistency_notes': 'Maintains visual continuity from previous scene',
+                'fibo_start_frame': self._create_default_fibo_prompt('start', 'Scene continuation'),
+                'fibo_end_frame': self._create_default_fibo_prompt('end', 'Scene conclusion'),
+                'video_generation_notes': 'Dramatic conclusion with cinematic flair'
+            }
+        ]
+    
+    def _create_default_fibo_prompt(self, frame_type: str, scene_content: str) -> Dict[str, Any]:
+        """Create default FIBO structured prompt."""
+        return {
+            'short_description': f'{frame_type.title()}: {scene_content}',
+            'objects': [
                 {
-                    "description": "Main subject from script context",
-                    "location": "Center frame",
-                    "relationship": "Primary focus of scene",
-                    "relative_size": "Prominent in frame",
-                    "shape_and_color": "Natural, realistic appearance",
-                    "texture": "Photorealistic surface details",
-                    "appearance_details": "High-quality, detailed rendering",
-                    "pose": "Natural, contextually appropriate",
-                    "expression": "Contextually appropriate emotion",
-                    "orientation": "Facing camera or contextually relevant direction"
+                    'description': 'Main subject from scene analysis',
+                    'location': 'Center frame, rule of thirds positioning',
+                    'relationship': 'Primary focus of the composition',
+                    'relative_size': 'Prominent within frame',
+                    'shape_and_color': 'Natural, realistic appearance',
+                    'texture': 'Photorealistic surface details',
+                    'appearance_details': 'High quality, professional rendering',
+                    'pose': 'Natural, contextually appropriate positioning',
+                    'expression': 'Contextually appropriate mood',
+                    'orientation': 'Camera-facing, engaging composition'
                 }
             ],
-            "background_setting": "Detailed environment from script context",
-            "lighting": "Professional, cinematic lighting setup",
-            "aesthetics": {
-                "composition": "Balanced, rule of thirds composition",
-                "color_scheme": "Natural, harmonious color palette",
-                "mood_atmosphere": "Appropriate to script context"
+            'background_setting': scene_content,
+            'lighting': 'Cinematic three-point lighting with dramatic shadows',
+            'aesthetics': {
+                'composition': 'Rule of thirds, balanced framing',
+                'color_scheme': 'Natural, harmonious color palette',
+                'mood_atmosphere': 'Cinematic, professional mood'
             },
-            "photographic_characteristics": {
-                "depth_of_field": "Appropriate focus for scene",
-                "camera_angle": "Eye-level, professional framing",
-                "lens_focal_length": "50mm equivalent, natural perspective"
+            'photographic_characteristics': {
+                'depth_of_field': 'Cinematic shallow depth of field',
+                'camera_angle': 'Eye-level, professional framing',
+                'lens_focal_length': '50mm equivalent focal length'
             },
-            "style_medium": "Photorealistic, cinematic"
+            'style_medium': 'Photorealistic, cinematic, high production value'
         }
-    
-    def get_checkpoint_summary(self, video_plan: dict) -> str:
-        """Get a summary of all checkpoints for selection."""
-        if not video_plan or "checkpoints" not in video_plan:
-            return "No checkpoints available"
-        
-        summary = []
-        summary.append(f"🎬 {video_plan.get('project_title', 'Video Project')}")
-        summary.append(f"📊 Total Duration: {video_plan.get('total_duration_sec', 0)} seconds")
-        summary.append(f"🎯 Checkpoints: {len(video_plan['checkpoints'])}")
-        summary.append("\n📋 CHECKPOINT OVERVIEW:")
-        
-        for checkpoint in video_plan["checkpoints"]:
-            summary.append(f"  ✓ Checkpoint {checkpoint['checkpoint_id']}: {checkpoint['start_time_sec']}-{checkpoint['end_time_sec']}s")
-            summary.append(f"    Scene: {checkpoint['scene_description'][:80]}...")
-        
-        summary.append(f"\n🎨 Visual Style: {video_plan.get('visual_style', {}).get('artistic_direction', 'Standard')}")
-        
-        return "\n".join(summary)
-    
-    def export_checkpoint_fibo_prompts(self, video_plan: dict, checkpoint_id: int) -> dict:
-        """Export FIBO structured prompts for a specific checkpoint.
-        
-        Args:
-            video_plan: The complete video plan
-            checkpoint_id: ID of checkpoint to export
-            
-        Returns:
-            Dictionary with start and end frame FIBO prompts
-        """
-        if not video_plan or "checkpoints" not in video_plan:
-            return {"error": "No video plan available"}
-        
-        # Find the requested checkpoint
-        checkpoint = None
-        for cp in video_plan["checkpoints"]:
-            if cp["checkpoint_id"] == checkpoint_id:
-                checkpoint = cp
-                break
-        
-        if not checkpoint:
-            return {"error": f"Checkpoint {checkpoint_id} not found"}
-        
-        return {
-            "checkpoint_id": checkpoint_id,
-            "scene_description": checkpoint["scene_description"],
-            "duration_sec": checkpoint["duration_sec"],
-            "visual_style": video_plan.get("visual_style", {}),
-            "fibo_start_frame": checkpoint["fibo_start_frame"],
-            "fibo_end_frame": checkpoint["fibo_end_frame"],
-            "video_generation_notes": checkpoint["video_generation_notes"]
-        }
-
-def main():
-    """Demo the FIBO Video Director system."""
-    
-    if not os.environ.get("GOOGLE_API_KEY"):
-        print("❌ GOOGLE_API_KEY not set!")
-        print("Set your Google API key: set GOOGLE_API_KEY=your_key")
-        return
-    
-    # Initialize the FIBO video director
-    director = FIBOVideoDirector(os.environ["GOOGLE_API_KEY"])
-    
-    # Sample cyberpunk script for testing
-    sample_script = """
-    FADE IN:
-    
-    EXT. CYBERPUNK CITY - NIGHT
-    
-    Rain falls on neon-lit streets. Holographic advertisements flicker on towering buildings.
-    
-    JACK (30s, cybernetic arm, leather jacket) walks through the crowded street, dodging flying cars overhead. His augmented reality display shows incoming messages.
-    
-    JACK
-    (to his AI assistant)
-    Show me the route to the data center.
-    
-    A holographic path appears in his vision, leading through dark alleys.
-    
-    Jack turns into a narrow alley where ZARA (20s, punk hacker, glowing tattoos) waits by a hidden door.
-    
-    ZARA
-    You're late. The security window closes in five minutes.
-    
-    JACK
-    Traffic was hell. Flying cars everywhere.
-    
-    Zara activates a device that makes the door shimmer and become transparent.
-    
-    ZARA
-    After you, corporate spy.
-    
-    Jack smirks and steps through the shimmering portal.
-    
-    INT. DATA CENTER - CONTINUOUS
-    
-    A vast room filled with glowing servers and holographic data streams. The air hums with electricity.
-    
-    JACK
-    (amazed)
-    This is it. The neural network core.
-    
-    Zara's tattoos pulse brighter as she interfaces with the system.
-    
-    ZARA
-    I'm in. Downloading the consciousness files now.
-    
-    Suddenly, alarms blare. Red lights flash throughout the facility.
-    
-    JACK
-    (urgent)
-    We've been detected! How much longer?
-    
-    ZARA
-    (focused, tattoos blazing)
-    Thirty seconds! Keep them off me!
-    
-    Jack draws a plasma weapon as security drones swarm toward them.
-    
-    FADE OUT.
-    """
-    
-    try:
-        print("🎬 FIBO Video Director System")
-        print("="*60)
-        print("Processing cyberpunk script for FIBO video generation...")
-        
-        # Create the video plan with checkpoints
-        video_plan = director.create_video_plan(sample_script)
-        
-        # Show checkpoint summary
-        print("\n📋 VIDEO PLAN CREATED:")
-        print("="*60)
-        summary = director.get_checkpoint_summary(video_plan)
-        print(summary)
-        
-        # Save the complete plan
-        with open("fibo_video_plan.json", "w") as f:
-            json.dump(video_plan, f, indent=2)
-        print(f"\n💾 Complete video plan saved to: fibo_video_plan.json")
-        
-        # Demo: Export specific checkpoint for FIBO generation
-        if video_plan.get("checkpoints"):
-            checkpoint_id = 1
-            print(f"\n🎯 EXPORTING CHECKPOINT {checkpoint_id} FOR FIBO GENERATION:")
-            print("="*60)
-            
-            checkpoint_data = director.export_checkpoint_fibo_prompts(video_plan, checkpoint_id)
-            
-            # Save checkpoint-specific FIBO prompts
-            with open(f"checkpoint_{checkpoint_id}_fibo_prompts.json", "w") as f:
-                json.dump(checkpoint_data, f, indent=2)
-            
-            print(f"✅ Checkpoint {checkpoint_id} FIBO prompts exported")
-            print(f"📄 Start Frame: {checkpoint_data['fibo_start_frame']['short_description'][:100]}...")
-            print(f"📄 End Frame: {checkpoint_data['fibo_end_frame']['short_description'][:100]}...")
-            print(f"💾 Saved to: checkpoint_{checkpoint_id}_fibo_prompts.json")
-        
-        print("\n🎥 WORKFLOW SUMMARY:")
-        print("="*60)
-        print("1. ✅ Script analyzed and broken into 8-second checkpoints")
-        print("2. ✅ Consistent visual style established across all segments")
-        print("3. ✅ FIBO structured JSON prompts created for each checkpoint")
-        print("4. ✅ Checkpoints ready for selective frame generation")
-        print("\n💡 Next Steps:")
-        print("  • Select checkpoints for frame generation")
-        print("  • Use FIBO structured prompts for consistent frames")
-        print("  • Generate start and end frames for each segment")
-        print("  • Combine frames into complete video sequence")
-        
-    except Exception as e:
-        print(f"❌ Error: {e}")
-
-if __name__ == "__main__":
-    main()
