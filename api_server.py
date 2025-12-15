@@ -29,6 +29,13 @@ try:
 except ImportError:
     ENHANCED_AVAILABLE = False
 
+# Import AgentCore client
+try:
+    from agentcore_client import create_agentcore_client
+    AGENTCORE_AVAILABLE = True
+except ImportError:
+    AGENTCORE_AVAILABLE = False
+
 # Initialize FastAPI app
 app = FastAPI(title="FIBO Video Director API", version="1.0.0")
 
@@ -41,10 +48,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global director instance
+# Global director instances
 director = None
 enhanced_director = None
+agentcore_client = None
 use_enhanced = False  # Toggle for enhanced multi-agent system
+use_agentcore = True  # Use AgentCore by default
 cache_dir = Path("cache")
 cache_dir.mkdir(exist_ok=True)
 
@@ -80,7 +89,7 @@ generation_status = {}
 @app.on_event("startup")
 async def startup_event():
     """Initialize the FIBO director on startup."""
-    global director, enhanced_director, use_enhanced
+    global director, enhanced_director, agentcore_client, use_enhanced, use_agentcore
     
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
@@ -92,6 +101,17 @@ async def startup_event():
         print(f"✅ FAL_KEY configured ({fal_key[:10]}...)")
     else:
         print("⚠️ FAL_KEY not set - image generation will fail!")
+    
+    # Initialize AgentCore client if available
+    if AGENTCORE_AVAILABLE:
+        try:
+            agentcore_client = create_agentcore_client()
+            use_agentcore = os.environ.get("USE_AGENTCORE", "true").lower() == "true"
+            print(f"✅ AgentCore FIBO Director available (enabled: {use_agentcore})")
+            print(f"   Agent ARN: arn:aws:bedrock-agentcore:us-east-1:476114109859:runtime/src_main-PQhMz74UaU")
+        except Exception as e:
+            print(f"⚠️ AgentCore client init failed: {e}")
+            use_agentcore = False
     
     # Initialize standard director
     director = FIBOVideoDirector(api_key)
@@ -111,12 +131,27 @@ async def startup_event():
 async def root():
     """Health check endpoint."""
     fal_configured = bool(os.environ.get("FAL_KEY"))
+    google_api_configured = bool(os.environ.get("GOOGLE_API_KEY"))
+    
+    # Determine active mode
+    if use_agentcore and AGENTCORE_AVAILABLE:
+        active_mode = "agentcore"
+    elif use_enhanced and ENHANCED_AVAILABLE:
+        active_mode = "enhanced"
+    else:
+        active_mode = "standard"
+    
     return {
         "message": "FIBO Video Director API",
         "status": "running",
+        "active_mode": active_mode,
+        "agentcore_available": AGENTCORE_AVAILABLE,
+        "agentcore_enabled": use_agentcore,
         "enhanced_available": ENHANCED_AVAILABLE,
         "enhanced_enabled": use_enhanced,
-        "fal_configured": fal_configured
+        "fal_configured": fal_configured,
+        "google_api_configured": google_api_configured,
+        "agentcore_arn": "arn:aws:bedrock-agentcore:us-east-1:476114109859:runtime/src_main-PQhMz74UaU" if AGENTCORE_AVAILABLE else None
     }
 
 
@@ -131,9 +166,9 @@ async def get_director_mode():
 
 
 @app.post("/api/director-mode")
-async def set_director_mode(enable_enhanced: bool = False):
-    """Toggle between standard and enhanced director modes."""
-    global use_enhanced
+async def set_director_mode(enable_enhanced: bool = False, enable_agentcore: bool = True):
+    """Toggle between director modes."""
+    global use_enhanced, use_agentcore
     
     if enable_enhanced and not ENHANCED_AVAILABLE:
         raise HTTPException(
@@ -141,10 +176,27 @@ async def set_director_mode(enable_enhanced: bool = False):
             detail="Enhanced director not available"
         )
     
+    if enable_agentcore and not AGENTCORE_AVAILABLE:
+        raise HTTPException(
+            status_code=400,
+            detail="AgentCore not available"
+        )
+    
     use_enhanced = enable_enhanced
+    use_agentcore = enable_agentcore
+    
+    # Determine active mode
+    if use_agentcore:
+        mode = "agentcore"
+    elif use_enhanced:
+        mode = "enhanced"
+    else:
+        mode = "standard"
+    
     return {
+        "agentcore_enabled": use_agentcore,
         "enhanced_enabled": use_enhanced,
-        "mode": "enhanced" if use_enhanced else "standard"
+        "mode": mode
     }
 
 @app.post("/api/generate-plan", response_model=VideoPlanResponse)
@@ -154,10 +206,15 @@ async def generate_plan(request: ScriptRequest):
         # Generate unique project ID
         project_id = str(uuid.uuid4())
         
-        # Use enhanced director if enabled, otherwise standard
-        if use_enhanced and enhanced_director:
+        # Use AgentCore if available, then enhanced director, then standard
+        if use_agentcore and agentcore_client:
+            print("🤖 Using AgentCore FIBO Director")
+            video_plan = await agentcore_client.process_script(request.script_text)
+        elif use_enhanced and enhanced_director:
+            print("🧠 Using Enhanced FIBO Director")
             video_plan = enhanced_director.process_script(request.script_text)
         else:
+            print("📝 Using Standard FIBO Director")
             video_plan = director.create_video_plan(request.script_text)
         
         if not video_plan:
