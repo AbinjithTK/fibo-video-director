@@ -14,9 +14,13 @@ from typing import Dict, Any, Optional
 # Import AgentCore client
 try:
     from agentcore_client import create_agentcore_client
-    AGENTCORE_AVAILABLE = True
+    AGENTCORE_IMPORT_OK = True
 except ImportError:
-    AGENTCORE_AVAILABLE = False
+    AGENTCORE_IMPORT_OK = False
+    print("⚠️ AgentCore client import failed")
+
+# Will be set to True only after successful initialization
+AGENTCORE_AVAILABLE = False
 
 # Import FAL integration
 try:
@@ -103,15 +107,20 @@ def lambda_handler(event, context):
 
 def initialize_services():
     """Initialize services on Lambda cold start."""
-    global agentcore_client, fal_integration, s3_storage
+    global agentcore_client, fal_integration, s3_storage, AGENTCORE_AVAILABLE
     
-    # Initialize AgentCore client
-    if AGENTCORE_AVAILABLE and agentcore_client is None:
+    # Initialize AgentCore client (Gemini-based)
+    if AGENTCORE_IMPORT_OK and agentcore_client is None:
         try:
+            print("🔧 Initializing Gemini FIBO Director...")
             agentcore_client = create_agentcore_client()
-            print("✅ AgentCore client initialized")
+            AGENTCORE_AVAILABLE = True
+            print("✅ Gemini FIBO Director initialized successfully")
         except Exception as e:
-            print(f"⚠️ AgentCore init failed: {e}")
+            print(f"❌ Gemini FIBO Director init failed: {e}")
+            import traceback
+            traceback.print_exc()
+            AGENTCORE_AVAILABLE = False
     
     # Initialize FAL integration
     if FAL_AVAILABLE and fal_integration is None:
@@ -175,13 +184,17 @@ def handle_generate_plan(event):
         # Generate unique project ID
         project_id = str(uuid.uuid4())
         
-        # Process with AgentCore if available
+        # Process with Gemini FIBO Director if available
         if AGENTCORE_AVAILABLE and agentcore_client:
-            print("🤖 Using AgentCore FIBO Director")
+            print("🤖 Using Gemini FIBO Director for AI processing")
+            start_time = datetime.now()
             # Note: Lambda doesn't support async/await in handler, so we use asyncio.run
             video_plan = asyncio.run(agentcore_client.process_script(script_text))
+            end_time = datetime.now()
+            processing_time = (end_time - start_time).total_seconds()
+            print(f"✅ Gemini processing completed in {processing_time:.2f} seconds")
         else:
-            print("📝 Using fallback director")
+            print("📝 Using fallback director (Gemini not available)")
             video_plan = create_fallback_plan(script_text)
         
         if not video_plan:
