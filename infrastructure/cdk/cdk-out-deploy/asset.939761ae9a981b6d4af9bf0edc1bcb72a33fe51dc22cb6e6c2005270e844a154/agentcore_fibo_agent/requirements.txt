@@ -1,4 +1,0 @@
-bedrock-agentcore>=1.1.0
-strands-agents>=1.13.0
-strands-agents-tools>=0.2.12
-google-genai>=0.8.0

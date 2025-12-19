@@ -49,7 +49,7 @@ cd fibo-video-director
 Run the interactive setup script:
 
 ```bash
-python setup-env.py
+python scripts/setup-env.py
 ```
 
 This will:
@@ -58,17 +58,25 @@ This will:
 - ✅ Install frontend dependencies
 - ✅ Verify all components are working
 
-### 3. Start the Application
+### 3. Test the Setup
+
+Verify the cleaned structure works:
+
+```bash
+python test_app.py
+```
+
+### 4. Start the Application
 
 **Option A: Quick Start (Recommended)**
 ```bash
-python start_fibo_app.py
+python scripts/start_fibo_app.py
 ```
 
 **Option B: Manual Start**
 ```bash
 # Terminal 1: Start Backend
-uvicorn api_server:app --port 8000
+python app.py
 
 # Terminal 2: Start Frontend
 cd frontend
@@ -101,7 +109,7 @@ The application includes sample scripts for:
 ### Run Complete System Test
 
 ```bash
-python test_full_system.py
+python tests/integration/test_full_system.py
 ```
 
 This validates:
@@ -113,7 +121,7 @@ This validates:
 ### Run Local Workflow Test
 
 ```bash
-python test_local_workflow.py
+python tests/integration/test_local_workflow.py
 ```
 
 Tests the complete user workflow from script input to FIBO prompt generation.
@@ -173,25 +181,32 @@ USE_ENHANCED_DIRECTOR=true
 ```
 fibo-video-director/
 ├── 🎬 Core System
-│   ├── api_server.py              # FastAPI backend server
-│   ├── enhanced_fibo_director.py  # Multi-agent director system
-│   ├── working_fibo_director.py   # Fallback director
-│   └── fal_fibo_integration.py    # FAL.ai integration
+│   ├── core/
+│   │   ├── api_server.py              # FastAPI backend server
+│   │   ├── enhanced_fibo_director.py  # Multi-agent director system
+│   │   ├── working_fibo_director.py   # Fallback director
+│   │   └── fal_fibo_integration.py    # FAL.ai integration
 ├── 🌐 Frontend
-│   ├── frontend/src/App.js        # Main React application
-│   ├── frontend/src/components/   # React components
-│   └── frontend/src/services/     # API services
+│   ├── frontend/src/App.js            # Main React application
+│   ├── frontend/src/components/       # React components
+│   └── frontend/src/services/         # API services
 ├── 🧪 Testing
-│   ├── test_full_system.py        # Complete system validation
-│   ├── test_local_workflow.py     # End-to-end workflow test
-│   └── test_*.py                  # Component-specific tests
-├── ⚙️ Setup & Config
-│   ├── setup-env.py               # Interactive environment setup
-│   ├── start_fibo_app.py          # Application launcher
-│   └── .env.example               # Environment template
+│   ├── tests/integration/
+│   │   ├── test_full_system.py        # Complete system validation
+│   │   └── test_local_workflow.py     # End-to-end workflow test
+│   └── test_app.py                    # Quick structure test
+├── ⚙️ Scripts & Setup
+│   ├── scripts/
+│   │   ├── setup-env.py               # Interactive environment setup
+│   │   └── start_fibo_app.py          # Application launcher
+│   ├── app.py                         # Main application entry point
+│   └── .env.example                   # Environment template
+├── 📁 Archive & Reference
+│   ├── archive/old_implementations/   # Previous versions for reference
+│   ├── archive/test_scripts/          # Development test scripts
+│   └── archive/reference_docs/        # Technical documentation
 └── 📚 Documentation
-    ├── README.md                  # This file
-    └── WORKING_SOLUTION_SUMMARY.md # Technical details
+    └── README.md                      # This file
 ```
 
 ## 🔍 Troubleshooting

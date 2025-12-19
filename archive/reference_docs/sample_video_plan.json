@@ -1,0 +1,305 @@
+{
+  "project_title": "Cyberpunk Chronicles",
+  "production_id": "fibo_20251216_220129",
+  "created_at": "2025-12-16T22:01:29.050323",
+  "total_duration_sec": 32,
+  "visual_style": {
+    "lighting_style": "Neon noir lighting with cyan and magenta accents",
+    "color_palette": "Cyberpunk palette: deep blues, electric cyans, neon magentas, with high contrast",
+    "camera_style": "50mm lens, f/2.8, cinematic depth of field",
+    "environment_theme": "Neon-lit cyberpunk cityscape with holographic elements",
+    "artistic_direction": "Futuristic, high-tech atmosphere, photorealistic, high production value"
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": 1,
+      "start_time_sec": 0,
+      "end_time_sec": 8,
+      "duration_sec": 8,
+      "scene_description": "FADE IN:\nEXT. CYBERPUNK CITY - NIGHT\nRain falls on neon-lit streets. Holographic advertisements flicker on towering buildings.\nJACK (30s, cybernetic arm, leather jacket) walks through the crowded stre...",
+      "is_continuation": false,
+      "visual_consistency_notes": "Maintains Futuristic, high-tech atmosphere throughout the sequence",
+      "fibo_start_frame": {
+        "short_description": "Start frame (Checkpoint 1): FADE IN:\nEXT. CYBERPUNK CITY - NIGHT\nRain falls on neon-lit streets. Holographic advertisements flic...",
+        "objects": [
+          {
+            "description": "Architectural elements with detailed textures and realistic materials",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Stable, imposing presence in the composition",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. FADE IN:\nEXT. CYBERPUNK CITY - NIGHT\nRain falls on neon-lit streets. Holographic advertisements flicker on towering buildings.\nJACK (30s, cybernetic a",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Rule of thirds composition with balanced visual weight",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Medium shot with balanced framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "fibo_end_frame": {
+        "short_description": "End frame (Checkpoint 1): FADE IN:\nEXT. CYBERPUNK CITY - NIGHT\nRain falls on neon-lit streets. Holographic advertisements flic...",
+        "objects": [
+          {
+            "description": "Architectural elements with detailed textures and realistic materials",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Stable, imposing presence in the composition",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. FADE IN:\nEXT. CYBERPUNK CITY - NIGHT\nRain falls on neon-lit streets. Holographic advertisements flicker on towering buildings.\nJACK (30s, cybernetic a",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Rule of thirds composition with balanced visual weight",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Medium shot with balanced framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "video_generation_notes": "{\"camera_movement\": \"Smooth cinematic movement maintaining visual continuity\", \"subject_motion\": \"Natural character movement supporting narrative progression\", \"lighting_transition\": \"Consistent lighting maintaining mood throughout sequence\", \"pacing\": \"Measured, cinematic pacing allowing for emotional resonance\", \"continuity_notes\": \"Seamless transition maintaining spatial and temporal coherence\"}"
+    },
+    {
+      "checkpoint_id": 2,
+      "start_time_sec": 8,
+      "end_time_sec": 16,
+      "duration_sec": 8,
+      "scene_description": "Jack turns into a narrow alley where ZARA (20s, punk hacker, glowing tattoos)\nwaits by a hidden door.\nZARA\nYou're late. The security window closes in five minutes.\nJACK\nTraffic was hell. Flying cars e...",
+      "is_continuation": true,
+      "visual_consistency_notes": "Maintains Futuristic, high-tech atmosphere throughout the sequence",
+      "fibo_start_frame": {
+        "short_description": "Start frame (Checkpoint 2): Jack turns into a narrow alley where ZARA (20s, punk hacker, glowing tattoos)\nwaits by a hidden door...",
+        "objects": [
+          {
+            "description": "Main character with detailed facial features and authentic clothing",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Dynamic, contextually appropriate pose showing character emotion",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. Jack turns into a narrow alley where ZARA (20s, punk hacker, glowing tattoos)\nwaits by a hidden door.\nZARA\nYou're late. The security window closes in ",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Tight composition focusing on subject details",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Close-up, intimate framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "fibo_end_frame": {
+        "short_description": "End frame (Checkpoint 2): Jack turns into a narrow alley where ZARA (20s, punk hacker, glowing tattoos)\nwaits by a hidden door...",
+        "objects": [
+          {
+            "description": "Main character with detailed facial features and authentic clothing",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Dynamic, contextually appropriate pose showing character emotion",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. Jack turns into a narrow alley where ZARA (20s, punk hacker, glowing tattoos)\nwaits by a hidden door.\nZARA\nYou're late. The security window closes in ",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Tight composition focusing on subject details",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Close-up, intimate framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "video_generation_notes": "{\"camera_movement\": \"Smooth cinematic movement maintaining visual continuity\", \"subject_motion\": \"Natural character movement supporting narrative progression\", \"lighting_transition\": \"Consistent lighting maintaining mood throughout sequence\", \"pacing\": \"Measured, cinematic pacing allowing for emotional resonance\", \"continuity_notes\": \"Seamless transition maintaining spatial and temporal coherence\"}"
+    },
+    {
+      "checkpoint_id": 3,
+      "start_time_sec": 16,
+      "end_time_sec": 24,
+      "duration_sec": 8,
+      "scene_description": "Jack smirks and steps through the shimmering portal.\nINT. DATA CENTER - CONTINUOUS\nA vast room filled with glowing servers and holographic data streams.\nThe air hums with electricity.\nJACK\n(amazed)\nTh...",
+      "is_continuation": true,
+      "visual_consistency_notes": "Maintains Futuristic, high-tech atmosphere throughout the sequence",
+      "fibo_start_frame": {
+        "short_description": "Start frame (Checkpoint 3): Jack smirks and steps through the shimmering portal.\nINT. DATA CENTER - CONTINUOUS\nA vast room fille...",
+        "objects": [
+          {
+            "description": "Architectural elements with detailed textures and realistic materials",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Stable, imposing presence in the composition",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. Jack smirks and steps through the shimmering portal.\nINT. DATA CENTER - CONTINUOUS\nA vast room filled with glowing servers and holographic data stream",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Tight composition focusing on subject details",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Close-up, intimate framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "fibo_end_frame": {
+        "short_description": "End frame (Checkpoint 3): Jack smirks and steps through the shimmering portal.\nINT. DATA CENTER - CONTINUOUS\nA vast room fille...",
+        "objects": [
+          {
+            "description": "Architectural elements with detailed textures and realistic materials",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Stable, imposing presence in the composition",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. Jack smirks and steps through the shimmering portal.\nINT. DATA CENTER - CONTINUOUS\nA vast room filled with glowing servers and holographic data stream",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Tight composition focusing on subject details",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Close-up, intimate framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "video_generation_notes": "{\"camera_movement\": \"Smooth cinematic movement maintaining visual continuity\", \"subject_motion\": \"Natural character movement supporting narrative progression\", \"lighting_transition\": \"Consistent lighting maintaining mood throughout sequence\", \"pacing\": \"Measured, cinematic pacing allowing for emotional resonance\", \"continuity_notes\": \"Seamless transition maintaining spatial and temporal coherence\"}"
+    },
+    {
+      "checkpoint_id": 4,
+      "start_time_sec": 24,
+      "end_time_sec": 32,
+      "duration_sec": 8,
+      "scene_description": "Suddenly, alarms blare. Red lights flash throughout the facility.\nJACK\n(urgent)\nWe've been detected! How much longer?\nZARA\n(focused, tattoos blazing)\nThirty seconds! Keep them off me!\nJack draws a pla...",
+      "is_continuation": true,
+      "visual_consistency_notes": "Maintains Futuristic, high-tech atmosphere throughout the sequence",
+      "fibo_start_frame": {
+        "short_description": "Start frame (Checkpoint 4): Suddenly, alarms blare. Red lights flash throughout the facility.\nJACK\n(urgent)\nWe've been detected!...",
+        "objects": [
+          {
+            "description": "Central narrative element from the scene",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Naturally positioned within the scene context",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. Suddenly, alarms blare. Red lights flash throughout the facility.\nJACK\n(urgent)\nWe've been detected! How much longer?\nZARA\n(focused, tattoos blazing)\n",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Rule of thirds composition with balanced visual weight",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Medium shot with balanced framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "fibo_end_frame": {
+        "short_description": "End frame (Checkpoint 4): Suddenly, alarms blare. Red lights flash throughout the facility.\nJACK\n(urgent)\nWe've been detected!...",
+        "objects": [
+          {
+            "description": "Central narrative element from the scene",
+            "location": "Positioned according to rule of thirds for optimal composition",
+            "relationship": "Primary focal point driving the narrative forward",
+            "relative_size": "Appropriately scaled to shot type and narrative importance",
+            "shape_and_color": "Realistic proportions with natural, contextually appropriate coloring",
+            "texture": "Photorealistic surface details with high-resolution material properties",
+            "appearance_details": "Cinematic quality rendering with attention to fine details",
+            "pose": "Naturally positioned within the scene context",
+            "expression": "Emotionally resonant with the scene's dramatic context",
+            "orientation": "Positioned to enhance narrative flow and visual continuity"
+          }
+        ],
+        "background_setting": "Neon-lit cyberpunk cityscape with holographic elements. Suddenly, alarms blare. Red lights flash throughout the facility.\nJACK\n(urgent)\nWe've been detected! How much longer?\nZARA\n(focused, tattoos blazing)\n",
+        "lighting": "Neon noir lighting with cyan and magenta accents",
+        "aesthetics": {
+          "composition": "Rule of thirds composition with balanced visual weight",
+          "color_scheme": "Harmonious palette supporting Futuristic, high-tech atmosphere",
+          "mood_atmosphere": "Futuristic, high-tech atmosphere with cinematic depth and emotional resonance"
+        },
+        "photographic_characteristics": {
+          "depth_of_field": "Cinematic shallow depth of field with subject in sharp focus",
+          "camera_angle": "Medium shot with balanced framing",
+          "lens_focal_length": "50mm equivalent with natural perspective distortion"
+        },
+        "style_medium": "Photorealistic digital cinematography with high production values"
+      },
+      "video_generation_notes": "{\"camera_movement\": \"Smooth cinematic movement maintaining visual continuity\", \"subject_motion\": \"Natural character movement supporting narrative progression\", \"lighting_transition\": \"Consistent lighting maintaining mood throughout sequence\", \"pacing\": \"Measured, cinematic pacing allowing for emotional resonance\", \"continuity_notes\": \"Seamless transition maintaining spatial and temporal coherence\"}"
+    }
+  ],
+  "metadata": {
+    "agent_system": "Working FIBO Director",
+    "model": "intelligent-analysis",
+    "version": "1.0.0-working",
+    "script_analysis": {
+      "word_count": 212,
+      "estimated_complexity": "high",
+      "detected_genre": "cyberpunk"
+    }
+  }
+}
