@@ -7,7 +7,7 @@ Enhanced version with Strands multi-agent system
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 import uvicorn
 import uuid
@@ -355,27 +355,12 @@ async def generate_frames_background(project_id: str, checkpoint_id: int, genera
                 generation_status[generation_id].progress = 0.9
                 generation_status[generation_id].message = "Saving generated files..."
                 
-                # Copy generated files to cache directory
+                # Save JSON prompts locally for backup
                 import shutil
-                
-                # Copy start frame files
-                start_image_cache = cache_dir / f"start_frame_{generation_id}.png"
                 start_json_cache = cache_dir / f"start_frame_{generation_id}.json"
-                
-                has_start_image = False
-                if generated_files.get("start_frame_image"):
-                    shutil.copy2(generated_files["start_frame_image"], start_image_cache)
-                    has_start_image = True
-                shutil.copy2(generated_files["start_frame_json"], start_json_cache)
-                
-                # Copy end frame files
-                end_image_cache = cache_dir / f"end_frame_{generation_id}.png"
                 end_json_cache = cache_dir / f"end_frame_{generation_id}.json"
                 
-                has_end_image = False
-                if generated_files.get("end_frame_image"):
-                    shutil.copy2(generated_files["end_frame_image"], end_image_cache)
-                    has_end_image = True
+                shutil.copy2(generated_files["start_frame_json"], start_json_cache)
                 shutil.copy2(generated_files["end_frame_json"], end_json_cache)
                 
                 # Update final status
@@ -388,18 +373,37 @@ async def generate_frames_background(project_id: str, checkpoint_id: int, genera
                 generation_status[generation_id].start_frame_cached = generated_files.get("start_frame_cached", False)
                 generation_status[generation_id].end_frame_cached = generated_files.get("end_frame_cached", False)
                 
+                # Check if we have actual image URLs from FAL
+                start_image_url = generated_files.get("start_frame_url")
+                end_image_url = generated_files.get("end_frame_url")
+                
+                has_start_image = bool(start_image_url and (start_image_url.startswith('http') or generated_files.get("start_frame_image")))
+                has_end_image = bool(end_image_url and (end_image_url.startswith('http') or generated_files.get("end_frame_image")))
+                
                 if has_start_image and has_end_image:
                     generation_status[generation_id].message = f"✅ Both frames ready in {total_time:.1f}s"
+                elif has_start_image or has_end_image:
+                    generation_status[generation_id].message = f"⚠️ One frame ready in {total_time:.1f}s"
                 else:
                     generation_status[generation_id].message = "⚠️ JSON prompts ready (image generation failed)"
                 
-                # Set URLs
-                if has_start_image:
+                # Set URLs - prefer FAL URLs, fallback to local files
+                if start_image_url and start_image_url.startswith('http'):
+                    generation_status[generation_id].start_frame_url = start_image_url
+                elif generated_files.get("start_frame_image"):
+                    # Copy local image to cache and serve it
+                    start_image_cache = cache_dir / f"start_frame_{generation_id}.png"
+                    shutil.copy2(generated_files["start_frame_image"], start_image_cache)
                     generation_status[generation_id].start_frame_url = f"/api/download/start_frame_{generation_id}.png"
                 else:
                     generation_status[generation_id].start_frame_url = f"/api/download/start_frame_{generation_id}.json"
                 
-                if has_end_image:
+                if end_image_url and end_image_url.startswith('http'):
+                    generation_status[generation_id].end_frame_url = end_image_url
+                elif generated_files.get("end_frame_image"):
+                    # Copy local image to cache and serve it
+                    end_image_cache = cache_dir / f"end_frame_{generation_id}.png"
+                    shutil.copy2(generated_files["end_frame_image"], end_image_cache)
                     generation_status[generation_id].end_frame_url = f"/api/download/end_frame_{generation_id}.png"
                 else:
                     generation_status[generation_id].end_frame_url = f"/api/download/end_frame_{generation_id}.json"
@@ -466,6 +470,30 @@ async def download_file(filename: str):
         filename=filename,
         media_type=media_type
     )
+
+@app.get("/api/proxy-image")
+async def proxy_image(url: str):
+    """Proxy external image URLs to avoid CORS issues."""
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            
+            # Determine content type
+            content_type = response.headers.get("content-type", "image/png")
+            
+            return Response(
+                content=response.content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "Access-Control-Allow-Origin": "*"
+                }
+            )
+    except Exception as e:
+        print(f"❌ Proxy error for {url}: {e}")
+        raise HTTPException(status_code=404, detail=f"Failed to proxy image: {str(e)}")
 
 @app.get("/api/cache-stats")
 async def get_cache_stats():

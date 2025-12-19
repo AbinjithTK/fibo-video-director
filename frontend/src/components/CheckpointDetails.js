@@ -15,6 +15,7 @@ import {
   downloadFile,
   cache
 } from '../services/api';
+import ImageGallery from './ImageGallery';
 import './CheckpointDetails.css';
 
 function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
@@ -117,9 +118,38 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
 
   const handleDownload = async (url, filename) => {
     try {
-      // Check if it's a FAL URL (external) or local API URL
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        // External URL - open in new tab or download directly
+      if (!url) {
+        toast.error('No URL available for download');
+        return;
+      }
+
+      // For external URLs (FAL, etc.), we need to download through our proxy
+      if (url.startsWith('http') && !url.includes('localhost')) {
+        // Use our backend to download the file
+        const response = await fetch(`http://localhost:8000/api/proxy-image?url=${encodeURIComponent(url)}`);
+        if (!response.ok) {
+          throw new Error(`Download failed: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        window.URL.revokeObjectURL(downloadUrl);
+        toast.success(`Downloaded ${filename}`);
+      } else if (url.startsWith('/api/')) {
+        // Local API URL
+        await downloadFile(url, filename);
+        toast.success(`Downloaded ${filename}`);
+      } else {
+        // Direct URL - try to download
         const link = document.createElement('a');
         link.href = url;
         link.download = filename;
@@ -128,23 +158,18 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
         link.click();
         document.body.removeChild(link);
         toast.success(`Downloaded ${filename}`);
-      } else {
-        // Local API URL
-        await downloadFile(url, filename);
-        toast.success(`Downloaded ${filename}`);
       }
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('Download failed');
+      toast.error(`Download failed: ${error.message}`);
     }
   };
 
   // Check if we have actual images (not just JSON)
-  // FAL URLs are from fal.media CDN and don't have extensions
   const isImageUrl = (url) => {
     if (!url) return false;
     // FAL CDN URLs are images
-    if (url.includes('fal.media') || url.includes('fal.ai')) return true;
+    if (url.includes('fal.media') || url.includes('fal.ai') || url.includes('storage.googleapis.com')) return true;
     // Local URLs with image extensions
     if (url.includes('.png') || url.includes('.jpg') || url.includes('.jpeg')) return true;
     // External HTTPS URLs that aren't JSON
@@ -152,8 +177,48 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
     return false;
   };
 
+  // Get proxied URL for external images to avoid CORS issues
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    
+    // If it's a local API URL, use it directly
+    if (url.startsWith('/api/')) {
+      return `http://localhost:8000${url}`;
+    }
+    
+    // If it's an external URL, use proxy to avoid CORS issues
+    if (url.startsWith('http')) {
+      return `http://localhost:8000/api/proxy-image?url=${encodeURIComponent(url)}`;
+    }
+    
+    return url;
+  };
+
   const hasStartImage = generationStatus?.start_frame_url && isImageUrl(generationStatus.start_frame_url);
   const hasEndImage = generationStatus?.end_frame_url && isImageUrl(generationStatus.end_frame_url);
+
+  // Prepare images for gallery
+  const galleryImages = [];
+  if (generationStatus?.start_frame_url) {
+    galleryImages.push({
+      id: 'start_frame',
+      url: generationStatus.start_frame_url,
+      title: 'Start Frame',
+      filename: `start_frame_checkpoint_${checkpoint.checkpoint_id}.png`,
+      cached: generationStatus.start_frame_cached,
+      generationTime: generationStatus.generation_time_sec ? (generationStatus.generation_time_sec / 2).toFixed(1) : null
+    });
+  }
+  if (generationStatus?.end_frame_url) {
+    galleryImages.push({
+      id: 'end_frame',
+      url: generationStatus.end_frame_url,
+      title: 'End Frame',
+      filename: `end_frame_checkpoint_${checkpoint.checkpoint_id}.png`,
+      cached: generationStatus.end_frame_cached,
+      generationTime: generationStatus.generation_time_sec ? (generationStatus.generation_time_sec / 2).toFixed(1) : null
+    });
+  }
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -242,10 +307,51 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
       </div>
 
       <div className="frames-section">
-        <div className="frame-container">
-          <div className="frame-header">
-            <h4>Start Frame</h4>
-            <div className="frame-actions">
+        {generating ? (
+          <div className="generation-progress-section">
+            <div className="progress-header">
+              <Loader2 className="spin" size={24} />
+              <h4>Generating Frames...</h4>
+            </div>
+            <div className="progress-details">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${(generationStatus?.progress || 0) * 100}%` }}
+                />
+              </div>
+              <p className="progress-message">
+                {generationStatus?.message || 'Initializing generation...'}
+              </p>
+            </div>
+          </div>
+        ) : galleryImages.length > 0 ? (
+          <ImageGallery
+            images={galleryImages}
+            title="Generated Frames"
+            onDownload={handleDownload}
+          />
+        ) : (
+          <div className="frames-placeholder">
+            <div className="placeholder-content">
+              <Image size={48} />
+              <h4>Ready to Generate</h4>
+              <p>Click "Generate Frames" to create images for this checkpoint</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="fibo-prompts-section">
+        <div className="section-header">
+          <h4>FIBO Structured Prompts</h4>
+          <p>Detailed JSON prompts used for frame generation</p>
+        </div>
+        
+        <div className="prompts-grid">
+          <div className="prompt-container">
+            <div className="prompt-header">
+              <h5>Start Frame Prompt</h5>
               <button
                 className="action-btn copy-btn"
                 onClick={() => copyToClipboard(
@@ -255,86 +361,25 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
                 title="Copy JSON prompt"
               >
                 <Copy size={14} />
+                Copy JSON
               </button>
-              {generationStatus?.start_frame_url && (
-                <button
-                  className="action-btn download-btn"
-                  onClick={() => handleDownload(
-                    generationStatus.start_frame_url,
-                    `start_frame_checkpoint_${checkpoint.checkpoint_id}.png`
-                  )}
-                  title="Download Image"
-                >
-                  <Download size={14} />
-                </button>
-              )}
+            </div>
+            <div className="prompt-preview">
+              <div className="prompt-field">
+                <strong>Description:</strong>
+                <p>{prompts.fibo_start_frame?.short_description || 'No description'}</p>
+              </div>
+              <div className="prompt-stats">
+                <span><strong>Objects:</strong> {prompts.fibo_start_frame?.objects?.length || 0}</span>
+                <span><strong>Lighting:</strong> {prompts.fibo_start_frame?.lighting || 'N/A'}</span>
+                <span><strong>Style:</strong> {prompts.fibo_start_frame?.style_medium || 'N/A'}</span>
+              </div>
             </div>
           </div>
-          
-          <div className="frame-content">
-            {generating && !hasStartImage ? (
-              <div className="generated-frame">
-                <div className="frame-placeholder generating">
-                  <Loader2 className="spin" size={48} />
-                  <span>Generating Start Frame...</span>
-                  <small>{generationStatus?.message || 'Please wait...'}</small>
-                </div>
-              </div>
-            ) : hasStartImage ? (
-              <div className="generated-frame">
-                <img 
-                  src={generationStatus.start_frame_url.startsWith('http') 
-                    ? generationStatus.start_frame_url 
-                    : `http://localhost:8000${generationStatus.start_frame_url}`}
-                  alt="Start Frame"
-                  className="frame-image"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="frame-placeholder error-state" style={{display: 'none'}}>
-                  <AlertCircle size={48} />
-                  <span>Image loading failed</span>
-                </div>
-              </div>
-            ) : generationStatus?.start_frame_url ? (
-              <div className="generated-frame">
-                <div className="frame-placeholder completed">
-                  <CheckCircle size={48} />
-                  <span>Frame Ready</span>
-                  <button 
-                    className="view-image-btn"
-                    onClick={() => window.open(
-                      generationStatus.start_frame_url.startsWith('http') 
-                        ? generationStatus.start_frame_url 
-                        : `http://localhost:8000${generationStatus.start_frame_url}`,
-                      '_blank'
-                    )}
-                  >
-                    View Image
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="frame-prompt">
-                <div className="prompt-preview">
-                  <strong>Description:</strong>
-                  <p>{prompts.fibo_start_frame?.short_description || 'No description'}</p>
-                </div>
-                <div className="prompt-details">
-                  <span><strong>Objects:</strong> {prompts.fibo_start_frame?.objects?.length || 0}</span>
-                  <span><strong>Lighting:</strong> {prompts.fibo_start_frame?.lighting || 'N/A'}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
-        <div className="frame-container">
-          <div className="frame-header">
-            <h4>End Frame</h4>
-            <div className="frame-actions">
+          <div className="prompt-container">
+            <div className="prompt-header">
+              <h5>End Frame Prompt</h5>
               <button
                 className="action-btn copy-btn"
                 onClick={() => copyToClipboard(
@@ -344,79 +389,20 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
                 title="Copy JSON prompt"
               >
                 <Copy size={14} />
+                Copy JSON
               </button>
-              {generationStatus?.end_frame_url && (
-                <button
-                  className="action-btn download-btn"
-                  onClick={() => handleDownload(
-                    generationStatus.end_frame_url,
-                    `end_frame_checkpoint_${checkpoint.checkpoint_id}.png`
-                  )}
-                  title="Download Image"
-                >
-                  <Download size={14} />
-                </button>
-              )}
             </div>
-          </div>
-          
-          <div className="frame-content">
-            {generating && !hasEndImage ? (
-              <div className="generated-frame">
-                <div className="frame-placeholder generating">
-                  <Loader2 className="spin" size={48} />
-                  <span>Generating End Frame...</span>
-                  <small>{generationStatus?.message || 'Please wait...'}</small>
-                </div>
+            <div className="prompt-preview">
+              <div className="prompt-field">
+                <strong>Description:</strong>
+                <p>{prompts.fibo_end_frame?.short_description || 'No description'}</p>
               </div>
-            ) : hasEndImage ? (
-              <div className="generated-frame">
-                <img 
-                  src={generationStatus.end_frame_url.startsWith('http') 
-                    ? generationStatus.end_frame_url 
-                    : `http://localhost:8000${generationStatus.end_frame_url}`}
-                  alt="End Frame"
-                  className="frame-image"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="frame-placeholder error-state" style={{display: 'none'}}>
-                  <AlertCircle size={48} />
-                  <span>Image loading failed</span>
-                </div>
+              <div className="prompt-stats">
+                <span><strong>Objects:</strong> {prompts.fibo_end_frame?.objects?.length || 0}</span>
+                <span><strong>Lighting:</strong> {prompts.fibo_end_frame?.lighting || 'N/A'}</span>
+                <span><strong>Style:</strong> {prompts.fibo_end_frame?.style_medium || 'N/A'}</span>
               </div>
-            ) : generationStatus?.end_frame_url ? (
-              <div className="generated-frame">
-                <div className="frame-placeholder completed">
-                  <CheckCircle size={48} />
-                  <span>Frame Ready</span>
-                  <button 
-                    className="view-image-btn"
-                    onClick={() => window.open(
-                      generationStatus.end_frame_url.startsWith('http') 
-                        ? generationStatus.end_frame_url 
-                        : `http://localhost:8000${generationStatus.end_frame_url}`,
-                      '_blank'
-                    )}
-                  >
-                    View Image
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="frame-prompt">
-                <div className="prompt-preview">
-                  <strong>Description:</strong>
-                  <p>{prompts.fibo_end_frame?.short_description || 'No description'}</p>
-                </div>
-                <div className="prompt-details">
-                  <span><strong>Objects:</strong> {prompts.fibo_end_frame?.objects?.length || 0}</span>
-                  <span><strong>Lighting:</strong> {prompts.fibo_end_frame?.lighting || 'N/A'}</span>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

@@ -192,17 +192,23 @@ class FalFiboIntegration:
                     if url:
                         print(f"   ✅ Start frame generated, processing...")
                         
-                        # Upload to S3 if available
+                        # Try to upload to S3 if available, but keep original URL as fallback
                         if self.s3_storage:
-                            cached_url = await self.s3_storage.upload_from_url(
-                                url, start_prompt, seed, "start"
-                            )
-                            results["start_frame_url"] = cached_url
+                            try:
+                                cached_url = await self.s3_storage.upload_from_url(
+                                    url, start_prompt, seed, "start"
+                                )
+                                # If S3 upload returns a local URL (fallback), use original FAL URL instead
+                                if cached_url.startswith('/api/download/'):
+                                    print(f"   ⚠️ S3 upload failed, using original FAL URL")
+                                    results["start_frame_url"] = url
+                                else:
+                                    results["start_frame_url"] = cached_url
+                            except Exception as s3_error:
+                                print(f"   ⚠️ S3 upload error: {s3_error}, using original FAL URL")
+                                results["start_frame_url"] = url
                         else:
-                            # Fallback to local storage
-                            path = self.output_dir / f"start_frame_{project_id}_{checkpoint_id}.png"
-                            await self.download_image(url, path)
-                            results["start_frame_image"] = str(path)
+                            # No S3 available, use original FAL URL directly
                             results["start_frame_url"] = url
                         
                         results["start_frame_cached"] = False
@@ -245,17 +251,23 @@ class FalFiboIntegration:
                     if url:
                         print(f"   ✅ End frame generated, processing...")
                         
-                        # Upload to S3 if available
+                        # Try to upload to S3 if available, but keep original URL as fallback
                         if self.s3_storage:
-                            cached_url = await self.s3_storage.upload_from_url(
-                                url, end_prompt, seed + 1, "end"
-                            )
-                            results["end_frame_url"] = cached_url
+                            try:
+                                cached_url = await self.s3_storage.upload_from_url(
+                                    url, end_prompt, seed + 1, "end"
+                                )
+                                # If S3 upload returns a local URL (fallback), use original FAL URL instead
+                                if cached_url.startswith('/api/download/'):
+                                    print(f"   ⚠️ S3 upload failed, using original FAL URL")
+                                    results["end_frame_url"] = url
+                                else:
+                                    results["end_frame_url"] = cached_url
+                            except Exception as s3_error:
+                                print(f"   ⚠️ S3 upload error: {s3_error}, using original FAL URL")
+                                results["end_frame_url"] = url
                         else:
-                            # Fallback to local storage
-                            path = self.output_dir / f"end_frame_{project_id}_{checkpoint_id}.png"
-                            await self.download_image(url, path)
-                            results["end_frame_image"] = str(path)
+                            # No S3 available, use original FAL URL directly
                             results["end_frame_url"] = url
                         
                         results["end_frame_cached"] = False
