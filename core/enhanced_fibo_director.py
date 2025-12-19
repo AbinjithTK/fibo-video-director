@@ -366,6 +366,10 @@ Steps:
                 self.shared_state["segments"] = segments
             elif isinstance(segments, dict) and "segments" in segments:
                 self.shared_state["segments"] = segments["segments"]
+            else:
+                # Fallback: Create segments manually if agent fails
+                print("   ⚠️ Agent segmentation failed, using fallback")
+                self.shared_state["segments"] = self._create_fallback_segments(script_text)
             
             print(f"   ✓ Created {len(self.shared_state['segments'])} segments")
             
@@ -386,8 +390,12 @@ Use define_visual_style to create consistent visual parameters for all frames.""
             cinematographer_response = self.agents["cinematographer"](cinematographer_prompt)
             visual_style = self._extract_json_from_response(str(cinematographer_response))
             
-            if visual_style:
+            if visual_style and isinstance(visual_style, dict):
                 self.shared_state["visual_style"] = visual_style
+            else:
+                # Fallback visual style
+                print("   ⚠️ Agent visual style failed, using fallback")
+                self.shared_state["visual_style"] = self._create_fallback_visual_style(scene_context, mood)
             
             print(f"   ✓ Visual style defined")
             
@@ -434,14 +442,28 @@ Create:
             
         except Exception as e:
             print(f"❌ Error in processing: {e}")
+            # Check if it's a quota error and create a better fallback
+            if "quota" in str(e).lower() or "resource_exhausted" in str(e).lower():
+                print("   📊 API quota exceeded - creating enhanced fallback plan")
+                return self._create_enhanced_fallback_plan(script_text)
             return self._create_fallback_plan(script_text)
     
     def _extract_json_from_response(self, response_text: str) -> Any:
-        """Extract JSON from agent response."""
+        """Extract JSON from agent response with improved parsing."""
+        print(f"   DEBUG: Parsing response (length: {len(response_text)})")
+        print(f"   DEBUG: Response preview: {response_text[:200]}...")
+        
         try:
-            # First try to find JSON array (for segments)
-            if "[" in response_text:
-                start = response_text.find("[")
+            # Try to find the largest valid JSON structure
+            json_candidates = []
+            
+            # Look for JSON arrays
+            array_start = 0
+            while True:
+                start = response_text.find("[", array_start)
+                if start == -1:
+                    break
+                    
                 depth = 0
                 end = start
                 for i, char in enumerate(response_text[start:], start):
@@ -453,14 +475,24 @@ Create:
                             end = i + 1
                             break
                 
-                json_str = response_text[start:end]
-                result = json.loads(json_str)
-                print(f"   DEBUG: Extracted JSON array with {len(result) if isinstance(result, list) else 'unknown'} items")
-                return result
+                if end > start:
+                    try:
+                        json_str = response_text[start:end]
+                        result = json.loads(json_str)
+                        json_candidates.append(("array", result, len(json_str)))
+                        print(f"   DEBUG: Found valid JSON array with {len(result) if isinstance(result, list) else 'unknown'} items")
+                    except json.JSONDecodeError:
+                        pass
                 
-            # Then try to find JSON object
-            elif "{" in response_text:
-                start = response_text.find("{")
+                array_start = start + 1
+            
+            # Look for JSON objects
+            obj_start = 0
+            while True:
+                start = response_text.find("{", obj_start)
+                if start == -1:
+                    break
+                    
                 depth = 0
                 end = start
                 for i, char in enumerate(response_text[start:], start):
@@ -472,14 +504,27 @@ Create:
                             end = i + 1
                             break
                 
-                json_str = response_text[start:end]
-                result = json.loads(json_str)
-                print(f"   DEBUG: Extracted JSON object with keys: {list(result.keys()) if isinstance(result, dict) else 'unknown'}")
-                return result
+                if end > start:
+                    try:
+                        json_str = response_text[start:end]
+                        result = json.loads(json_str)
+                        json_candidates.append(("object", result, len(json_str)))
+                        print(f"   DEBUG: Found valid JSON object with keys: {list(result.keys()) if isinstance(result, dict) else 'unknown'}")
+                    except json.JSONDecodeError:
+                        pass
                 
-        except json.JSONDecodeError as e:
-            print(f"   DEBUG: JSON decode error: {e}")
-            pass
+                obj_start = start + 1
+            
+            # Return the largest valid JSON structure
+            if json_candidates:
+                # Sort by size (largest first) and prefer arrays for segments
+                json_candidates.sort(key=lambda x: (x[0] == "array", x[2]), reverse=True)
+                best_candidate = json_candidates[0]
+                print(f"   DEBUG: Selected {best_candidate[0]} with size {best_candidate[2]}")
+                return best_candidate[1]
+                
+        except Exception as e:
+            print(f"   DEBUG: JSON extraction error: {e}")
         
         print(f"   DEBUG: No valid JSON found in response")
         return {}
@@ -509,6 +554,62 @@ Create:
             return "Dark, mysterious"
         else:
             return "Dramatic, cinematic"
+    
+    def _create_fallback_segments(self, script_text: str) -> List[Dict[str, Any]]:
+        """Create fallback segments when agent processing fails."""
+        lines = [l.strip() for l in script_text.split('\n') if l.strip()]
+        
+        # Estimate segments needed (aim for 8-second segments)
+        estimated_seconds = len(lines) * 2  # Rough estimate: 2 seconds per line
+        num_segments = max(2, min(4, (estimated_seconds + 7) // 8))  # 2-4 segments
+        
+        lines_per_segment = max(1, len(lines) // num_segments)
+        segments = []
+        
+        for i in range(num_segments):
+            start_idx = i * lines_per_segment
+            end_idx = start_idx + lines_per_segment if i < num_segments - 1 else len(lines)
+            segment_lines = lines[start_idx:end_idx]
+            
+            segments.append({
+                "segment_id": i + 1,
+                "start_time_sec": i * 8,
+                "end_time_sec": (i + 1) * 8,
+                "content": "\n".join(segment_lines),
+                "is_continuation": i > 0
+            })
+        
+        print(f"   DEBUG: Created {len(segments)} fallback segments")
+        return segments
+    
+    def _create_fallback_visual_style(self, scene_context: str, mood: str) -> Dict[str, Any]:
+        """Create fallback visual style when agent processing fails."""
+        context_lower = scene_context.lower()
+        
+        # Determine lighting based on context
+        if "night" in context_lower or "dark" in context_lower:
+            lighting = "Low-key lighting with dramatic shadows, rim lighting"
+        elif "cyberpunk" in context_lower or "neon" in context_lower:
+            lighting = "Volumetric fog, neon noir, high contrast, colored gels"
+        else:
+            lighting = "Balanced three-point lighting, natural color temperature"
+        
+        # Determine color palette
+        if "warm" in mood.lower() or "happy" in mood.lower():
+            palette = "Warm tones, golden highlights, saturated colors"
+        elif "cold" in mood.lower() or "tense" in mood.lower():
+            palette = "Cool tones, desaturated, teal and orange contrast"
+        else:
+            palette = "Natural, balanced color palette with cinematic grading"
+        
+        return {
+            "lighting_style": lighting,
+            "color_palette": palette,
+            "camera_style": "50mm lens, f/2.8, cinematic depth of field",
+            "environment_theme": scene_context[:200],
+            "artistic_direction": f"{mood} mood, photorealistic, high production value",
+            "film_stock": "Digital cinema, slight grain, high dynamic range"
+        }
     
     def _create_checkpoint(
         self,
@@ -618,8 +719,52 @@ Create:
             }
         }
     
+    def _create_enhanced_fallback_plan(self, script_text: str) -> Dict[str, Any]:
+        """Create an enhanced fallback plan when API quota is exceeded."""
+        # Create segments using fallback logic
+        segments = self._create_fallback_segments(script_text)
+        
+        # Extract scene context and mood
+        scene_context = self._extract_scene_context(script_text)
+        mood = self._extract_mood(script_text)
+        
+        # Create visual style
+        visual_style = self._create_fallback_visual_style(scene_context, mood)
+        
+        # Create checkpoints for each segment
+        checkpoints = []
+        for i, segment in enumerate(segments):
+            checkpoint = {
+                "checkpoint_id": i + 1,
+                "start_time_sec": segment["start_time_sec"],
+                "end_time_sec": segment["end_time_sec"],
+                "duration_sec": 8,
+                "scene_description": segment["content"][:200],
+                "is_continuation": segment["is_continuation"],
+                "visual_consistency_notes": f"Maintains {visual_style['artistic_direction']} style",
+                "fibo_start_frame": self._create_default_fibo_prompt("start", segment["content"][:100], visual_style),
+                "fibo_end_frame": self._create_default_fibo_prompt("end", segment["content"][:100], visual_style),
+                "video_generation_notes": "Smooth cinematic transition with professional pacing"
+            }
+            checkpoints.append(checkpoint)
+        
+        return {
+            "project_title": f"Enhanced FIBO Production {str(uuid.uuid4())[:8]}",
+            "production_id": str(uuid.uuid4())[:8],
+            "created_at": datetime.now().isoformat(),
+            "total_duration_sec": len(checkpoints) * 8,
+            "visual_style": visual_style,
+            "checkpoints": checkpoints,
+            "metadata": {
+                "agent_system": "Enhanced Fallback (Quota Limited)",
+                "model": "local-processing",
+                "version": "2.0.0",
+                "note": "Generated with local processing due to API quota limits"
+            }
+        }
+    
     def _create_fallback_plan(self, script_text: str) -> Dict[str, Any]:
-        """Create a fallback plan if agent processing fails."""
+        """Create a basic fallback plan if agent processing fails."""
         return {
             "project_title": "FIBO Fallback Production",
             "production_id": str(uuid.uuid4())[:8],
@@ -647,7 +792,7 @@ Create:
                 }
             ],
             "metadata": {
-                "agent_system": "Fallback mode",
+                "agent_system": "Basic Fallback",
                 "version": "2.0.0"
             }
         }
