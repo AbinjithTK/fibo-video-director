@@ -1,8 +1,24 @@
 // API service for FIBO Video Director
-// Local development configuration
+// Production-ready configuration with environment detection
 
-// Use relative URLs when proxy is configured in package.json
-const API_BASE_URL = process.env.NODE_ENV === 'development' ? '' : 'http://localhost:8000';
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // Production: Use environment variable or default production URL
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.REACT_APP_API_URL || 'https://your-backend-url.com';
+  }
+  
+  // Development: Use local server or proxy
+  return process.env.REACT_APP_API_URL || '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log('🔧 API Configuration:', {
+  environment: process.env.NODE_ENV,
+  apiBaseUrl: API_BASE_URL,
+  usingProxy: API_BASE_URL === ''
+});
 
 // Helper function for API requests
 const request = async (endpoint, options = {}) => {
