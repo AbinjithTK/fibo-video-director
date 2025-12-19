@@ -9,7 +9,7 @@ build:
       - echo "Build completed successfully"
 run:
   runtime-version: 3.10
-  command: uvicorn core.api_server:app --host 0.0.0.0 --port 8000
+  command: uvicorn core.production_server:app --host 0.0.0.0 --port 8000
   network:
     port: 8000
     env: PORT

@@ -38,7 +38,7 @@ app = FastAPI(
 
 # Production CORS configuration
 ALLOWED_ORIGINS = [
-    "https://main.d2x8j9k4l5m3n7.amplifyapp.com",  # Replace with your Amplify URL
+    "https://main.d2x8j9k4l5m3n7.amplifyapp.com",  # Your Amplify URL
     "https://*.amplifyapp.com",
     "http://localhost:3000",  # For local development
     "http://localhost:3001",
