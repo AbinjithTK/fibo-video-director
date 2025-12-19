@@ -439,10 +439,28 @@ Create:
     def _extract_json_from_response(self, response_text: str) -> Any:
         """Extract JSON from agent response."""
         try:
-            # Try to find JSON in the response
-            if "{" in response_text:
+            # First try to find JSON array (for segments)
+            if "[" in response_text:
+                start = response_text.find("[")
+                depth = 0
+                end = start
+                for i, char in enumerate(response_text[start:], start):
+                    if char == "[":
+                        depth += 1
+                    elif char == "]":
+                        depth -= 1
+                        if depth == 0:
+                            end = i + 1
+                            break
+                
+                json_str = response_text[start:end]
+                result = json.loads(json_str)
+                print(f"   DEBUG: Extracted JSON array with {len(result) if isinstance(result, list) else 'unknown'} items")
+                return result
+                
+            # Then try to find JSON object
+            elif "{" in response_text:
                 start = response_text.find("{")
-                # Find matching closing brace
                 depth = 0
                 end = start
                 for i, char in enumerate(response_text[start:], start):
@@ -455,14 +473,15 @@ Create:
                             break
                 
                 json_str = response_text[start:end]
-                return json.loads(json_str)
-            elif "[" in response_text:
-                start = response_text.find("[")
-                end = response_text.rfind("]") + 1
-                json_str = response_text[start:end]
-                return json.loads(json_str)
-        except json.JSONDecodeError:
+                result = json.loads(json_str)
+                print(f"   DEBUG: Extracted JSON object with keys: {list(result.keys()) if isinstance(result, dict) else 'unknown'}")
+                return result
+                
+        except json.JSONDecodeError as e:
+            print(f"   DEBUG: JSON decode error: {e}")
             pass
+        
+        print(f"   DEBUG: No valid JSON found in response")
         return {}
     
     def _extract_scene_context(self, script_text: str) -> str:
@@ -502,6 +521,12 @@ Create:
         
         # Try to extract FIBO prompts from action response
         extracted = self._extract_json_from_response(action_response)
+        
+        # Handle both list and dict responses
+        if isinstance(extracted, list) and len(extracted) > 0:
+            extracted = extracted[0]  # Take first item if it's a list
+        elif not isinstance(extracted, dict):
+            extracted = {}
         
         # Build FIBO start frame
         start_frame = extracted.get("fibo_start_frame") or self._create_default_fibo_prompt(

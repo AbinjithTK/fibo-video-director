@@ -1,72 +1,69 @@
 #!/usr/bin/env python3
 """
-FIBO Video Director API Server
-
-FastAPI backend for the FIBO video generation frontend.
-Provides endpoints for script processing, checkpoint management, and FIBO generation.
+FIBO Video Director API Server - Local Development
+Enhanced version with Strands multi-agent system
 """
-
-import os
-import json
-import uuid
-import asyncio
-from typing import Dict, List, Optional
-from pathlib import Path
-from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
+import uuid
+import json
+from datetime import datetime
+from typing import Dict, Any, Optional
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Import the working FIBO directors
 from fibo_video_director import FIBOVideoDirector
 
-# Try to import enhanced director (falls back to standard if unavailable)
+# Try to import enhanced director with Strands
 try:
     from enhanced_fibo_director import EnhancedFIBODirector
     ENHANCED_AVAILABLE = True
-except ImportError:
+    print("✅ Enhanced FIBO Director with Strands available")
+except ImportError as e:
     ENHANCED_AVAILABLE = False
+    print(f"⚠️ Enhanced FIBO Director not available: {e}")
 
-# Import AgentCore client
+# Try to import FAL integration
 try:
-    from agentcore_client import create_agentcore_client
-    AGENTCORE_AVAILABLE = True
-except ImportError:
-    AGENTCORE_AVAILABLE = False
+    from fal_fibo_integration import get_fal_integration
+    FAL_AVAILABLE = True
+    print("✅ FAL FIBO integration available")
+except ImportError as e:
+    FAL_AVAILABLE = False
+    print(f"⚠️ FAL integration not available: {e}")
 
-# Initialize FastAPI app
 app = FastAPI(title="FIBO Video Director API", version="1.0.0")
 
-# Add CORS middleware
+# Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Global director instances
-director = None
+# Global instances
+fibo_director = None
 enhanced_director = None
-agentcore_client = None
-use_enhanced = False  # Toggle for enhanced multi-agent system
-use_agentcore = True  # Use AgentCore by default
+projects_cache = {}
+generation_status = {}
+use_enhanced = True  # Enhanced director enabled by default
 cache_dir = Path("cache")
 cache_dir.mkdir(exist_ok=True)
 
-# Request/Response Models
 class ScriptRequest(BaseModel):
     script_text: str
-
-class VideoPlanResponse(BaseModel):
-    project_id: str
-    project_title: str
-    total_duration_sec: int
-    visual_style: Dict
-    checkpoints: List[Dict]
 
 class GenerateFramesRequest(BaseModel):
     project_id: str
@@ -82,93 +79,77 @@ class GenerationStatus(BaseModel):
     end_frame_cached: Optional[bool] = None
     generation_time_sec: Optional[float] = None
 
-# In-memory storage for projects and generation status
-projects_cache = {}
-generation_status = {}
-
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the FIBO director on startup."""
-    global director, enhanced_director, agentcore_client, use_enhanced, use_agentcore
+    """Initialize services on startup."""
+    global fibo_director, enhanced_director, use_enhanced
     
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        raise RuntimeError("GOOGLE_API_KEY environment variable not set")
+    print("🚀 Starting FIBO Video Director API Server...")
     
-    # Check FAL_KEY
+    # Get API keys
+    google_api_key = os.environ.get("GOOGLE_API_KEY")
     fal_key = os.environ.get("FAL_KEY")
+    
+    if not google_api_key:
+        print("⚠️ GOOGLE_API_KEY not set - using fallback mode")
+        use_enhanced = False
+    
     if fal_key:
         print(f"✅ FAL_KEY configured ({fal_key[:10]}...)")
     else:
-        print("⚠️ FAL_KEY not set - image generation will fail!")
+        print("⚠️ FAL_KEY not set - image generation will be limited")
     
-    # Initialize AgentCore client if available
-    if AGENTCORE_AVAILABLE:
-        try:
-            agentcore_client = create_agentcore_client()
-            use_agentcore = os.environ.get("USE_AGENTCORE", "true").lower() == "true"
-            print(f"✅ AgentCore FIBO Director available (enabled: {use_agentcore})")
-            print(f"   Agent ARN: arn:aws:bedrock-agentcore:us-east-1:476114109859:runtime/src_main-PQhMz74UaU")
-        except Exception as e:
-            print(f"⚠️ AgentCore client init failed: {e}")
-            use_agentcore = False
-    
-    # Initialize standard director
-    director = FIBOVideoDirector(api_key)
-    
-    # Initialize enhanced director if available
+    # Initialize Enhanced FIBO Director with Strands if available
     if ENHANCED_AVAILABLE:
         try:
-            enhanced_director = EnhancedFIBODirector(api_key)
-            use_enhanced = os.environ.get("USE_ENHANCED_DIRECTOR", "false").lower() == "true"
-            print(f"✅ Enhanced FIBO Director available (enabled: {use_enhanced})")
+            enhanced_director = EnhancedFIBODirector(google_api_key)
+            use_enhanced = True
+            print("✅ Enhanced FIBO Director with Multi-Agent Swarm initialized")
+            print("🤖 Multi-Agent System: Script Analyst + Visual Director + FIBO Specialist")
         except Exception as e:
-            print(f"⚠️ Enhanced director init failed: {e}")
+            print(f"⚠️ Failed to initialize Enhanced Director: {e}")
+            use_enhanced = False
+    else:
+        use_enhanced = False
     
-    print("✅ FIBO Video Director API Server started")
+    # Initialize standard FIBO Video Director as fallback
+    try:
+        fibo_director = FIBOVideoDirector(google_api_key)
+        print("✅ Standard FIBO Video Director initialized")
+    except Exception as e:
+        print(f"❌ Failed to initialize FIBO Director: {e}")
+        fibo_director = None
 
 @app.get("/")
-async def root():
+async def health_check():
     """Health check endpoint."""
-    fal_configured = bool(os.environ.get("FAL_KEY"))
-    google_api_configured = bool(os.environ.get("GOOGLE_API_KEY"))
-    
-    # Determine active mode
-    if use_agentcore and AGENTCORE_AVAILABLE:
-        active_mode = "agentcore"
-    elif use_enhanced and ENHANCED_AVAILABLE:
-        active_mode = "enhanced"
-    else:
-        active_mode = "standard"
-    
     return {
-        "message": "FIBO Video Director API",
+        "message": "FIBO Video Director API - Local Development",
         "status": "running",
-        "active_mode": active_mode,
-        "agentcore_available": AGENTCORE_AVAILABLE,
-        "agentcore_enabled": use_agentcore,
         "enhanced_available": ENHANCED_AVAILABLE,
         "enhanced_enabled": use_enhanced,
-        "fal_configured": fal_configured,
-        "google_api_configured": google_api_configured,
-        "agentcore_arn": "arn:aws:bedrock-agentcore:us-east-1:476114109859:runtime/src_main-PQhMz74UaU" if AGENTCORE_AVAILABLE else None
+        "fal_available": FAL_AVAILABLE,
+        "fibo_available": fibo_director is not None,
+        "google_api_configured": bool(os.environ.get("GOOGLE_API_KEY")),
+        "fal_configured": bool(os.environ.get("FAL_KEY")),
+        "active_mode": "enhanced" if use_enhanced and enhanced_director else "standard",
+        "version": "2.0.0-local"
     }
-
 
 @app.get("/api/director-mode")
 async def get_director_mode():
-    """Get current director mode status."""
+    """Get current director mode."""
     return {
         "enhanced_available": ENHANCED_AVAILABLE,
         "enhanced_enabled": use_enhanced,
-        "mode": "enhanced" if use_enhanced else "standard"
+        "fal_available": FAL_AVAILABLE,
+        "mode": "enhanced" if use_enhanced and enhanced_director else "standard"
     }
 
-
 @app.post("/api/director-mode")
-async def set_director_mode(enable_enhanced: bool = False, enable_agentcore: bool = True):
+async def set_director_mode(enable_enhanced: bool = True):
     """Toggle between director modes."""
-    global use_enhanced, use_agentcore
+    global use_enhanced
     
     if enable_enhanced and not ENHANCED_AVAILABLE:
         raise HTTPException(
@@ -176,55 +157,41 @@ async def set_director_mode(enable_enhanced: bool = False, enable_agentcore: boo
             detail="Enhanced director not available"
         )
     
-    if enable_agentcore and not AGENTCORE_AVAILABLE:
-        raise HTTPException(
-            status_code=400,
-            detail="AgentCore not available"
-        )
-    
     use_enhanced = enable_enhanced
-    use_agentcore = enable_agentcore
-    
-    # Determine active mode
-    if use_agentcore:
-        mode = "agentcore"
-    elif use_enhanced:
-        mode = "enhanced"
-    else:
-        mode = "standard"
     
     return {
-        "agentcore_enabled": use_agentcore,
         "enhanced_enabled": use_enhanced,
-        "mode": mode
+        "mode": "enhanced" if use_enhanced and enhanced_director else "standard"
     }
 
-@app.post("/api/generate-plan", response_model=VideoPlanResponse)
+@app.post("/api/generate-plan")
 async def generate_plan(request: ScriptRequest):
-    """Generate a video plan from a movie script."""
+    """Generate video production plan from script."""
     try:
+        if not request.script_text.strip():
+            raise HTTPException(status_code=400, detail="Script text is required")
+        
+        print(f"📝 Processing script: {request.script_text[:100]}...")
+        
         # Generate unique project ID
         project_id = str(uuid.uuid4())
         
-        # Use AgentCore if available, then enhanced director, then standard
-        if use_agentcore and agentcore_client:
-            print("🤖 Using AgentCore FIBO Director")
-            video_plan = await agentcore_client.process_script(request.script_text)
-        elif use_enhanced and enhanced_director:
-            print("🧠 Using Enhanced FIBO Director")
+        # Use Enhanced Director with Strands if available and enabled
+        if use_enhanced and enhanced_director:
+            print("🧠 Using Enhanced FIBO Director with Strands multi-agent system")
             video_plan = enhanced_director.process_script(request.script_text)
+        elif fibo_director:
+            print("🤖 Using Standard FIBO Video Director with Gemini")
+            video_plan = fibo_director.create_video_plan(request.script_text)
         else:
-            print("📝 Using Standard FIBO Director")
-            video_plan = director.create_video_plan(request.script_text)
-        
-        if not video_plan:
-            raise HTTPException(status_code=500, detail="Failed to generate video plan")
+            print("📝 Using intelligent fallback")
+            video_plan = create_intelligent_fallback_plan(request.script_text)
         
         # Cache the project
         projects_cache[project_id] = {
-            "video_plan": video_plan,
-            "created_at": datetime.now().isoformat(),
-            "script_text": request.script_text
+            'video_plan': video_plan,
+            'created_at': datetime.now().isoformat(),
+            'script_text': request.script_text
         }
         
         # Save to file for persistence
@@ -232,20 +199,44 @@ async def generate_plan(request: ScriptRequest):
         with open(project_file, "w") as f:
             json.dump(projects_cache[project_id], f, indent=2)
         
-        return VideoPlanResponse(
-            project_id=project_id,
-            project_title=video_plan.get("project_title", "Untitled Project"),
-            total_duration_sec=video_plan.get("total_duration_sec", 0),
-            visual_style=video_plan.get("visual_style", {}),
-            checkpoints=video_plan.get("checkpoints", [])
-        )
+        print(f"✅ Created project {project_id}: {video_plan['project_title']}")
+        
+        return {
+            'project_id': project_id,
+            'project_title': video_plan.get('project_title', 'FIBO Video Production'),
+            'total_duration_sec': video_plan.get('total_duration_sec', 16),
+            'checkpoints': video_plan.get('checkpoints', []),
+            'visual_style': video_plan.get('visual_style', {}),
+            'metadata': video_plan.get('metadata', {})
+        }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating plan: {str(e)}")
+        print(f"❌ Error generating plan: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to process script: {str(e)}")
 
 @app.get("/api/project/{project_id}")
 async def get_project(project_id: str):
-    """Get project details by ID."""
+    """Get project details."""
+    if project_id not in projects_cache:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project = projects_cache[project_id]
+    video_plan = project['video_plan']
+    
+    return {
+        'project_id': project_id,
+        'project_title': video_plan.get('project_title', 'FIBO Video Production'),
+        'total_duration_sec': video_plan.get('total_duration_sec', 16),
+        'checkpoints': video_plan.get('checkpoints', []),
+        'visual_style': video_plan.get('visual_style', {}),
+        'created_at': project['created_at']
+    }
+
+@app.get("/api/checkpoint/{project_id}/{checkpoint_id}")
+async def get_checkpoint(project_id: str, checkpoint_id: int):
+    """Get checkpoint details."""
     if project_id not in projects_cache:
         # Try to load from file
         project_file = cache_dir / f"project_{project_id}.json"
@@ -255,30 +246,27 @@ async def get_project(project_id: str):
         else:
             raise HTTPException(status_code=404, detail="Project not found")
     
-    project = projects_cache[project_id]
-    video_plan = project["video_plan"]
+    video_plan = projects_cache[project_id]['video_plan']
     
-    return VideoPlanResponse(
-        project_id=project_id,
-        project_title=video_plan.get("project_title", "Untitled Project"),
-        total_duration_sec=video_plan.get("total_duration_sec", 0),
-        visual_style=video_plan.get("visual_style", {}),
-        checkpoints=video_plan.get("checkpoints", [])
-    )
-
-@app.get("/api/checkpoint/{project_id}/{checkpoint_id}")
-async def get_checkpoint_prompts(project_id: str, checkpoint_id: int):
-    """Get FIBO structured prompts for a specific checkpoint."""
-    if project_id not in projects_cache:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    video_plan = projects_cache[project_id]["video_plan"]
-    
-    # Use appropriate director for export
+    # Use appropriate director's export method
     if use_enhanced and enhanced_director:
         checkpoint_data = enhanced_director.export_checkpoint_fibo_prompts(video_plan, checkpoint_id)
+    elif fibo_director:
+        checkpoint_data = fibo_director.export_checkpoint_fibo_prompts(video_plan, checkpoint_id)
     else:
-        checkpoint_data = director.export_checkpoint_fibo_prompts(video_plan, checkpoint_id)
+        # Fallback to direct lookup
+        for checkpoint in video_plan.get('checkpoints', []):
+            if checkpoint['checkpoint_id'] == checkpoint_id:
+                return {
+                    'checkpoint_id': checkpoint_id,
+                    'scene_description': checkpoint.get('scene_description', ''),
+                    'duration_sec': checkpoint.get('duration_sec', 8),
+                    'visual_style': video_plan.get('visual_style', {}),
+                    'fibo_start_frame': checkpoint.get('fibo_start_frame', {}),
+                    'fibo_end_frame': checkpoint.get('fibo_end_frame', {}),
+                    'video_generation_notes': checkpoint.get('video_generation_notes', '')
+                }
+        raise HTTPException(status_code=404, detail="Checkpoint not found")
     
     if "error" in checkpoint_data:
         raise HTTPException(status_code=404, detail=checkpoint_data["error"])
@@ -287,7 +275,7 @@ async def get_checkpoint_prompts(project_id: str, checkpoint_id: int):
 
 @app.post("/api/generate-frames")
 async def generate_frames(request: GenerateFramesRequest, background_tasks: BackgroundTasks):
-    """Generate FIBO frames for a checkpoint."""
+    """Generate frames for a checkpoint."""
     generation_id = f"{request.project_id}_{request.checkpoint_id}"
     
     # Initialize generation status
@@ -308,7 +296,7 @@ async def generate_frames(request: GenerateFramesRequest, background_tasks: Back
     return {"generation_id": generation_id, "status": "started"}
 
 async def generate_frames_background(project_id: str, checkpoint_id: int, generation_id: str):
-    """Background task for generating FIBO frames using FAL.ai API."""
+    """Background task for generating FIBO frames."""
     try:
         # Update status
         generation_status[generation_id].status = "generating"
@@ -318,129 +306,110 @@ async def generate_frames_background(project_id: str, checkpoint_id: int, genera
         
         # Get checkpoint data
         if project_id not in projects_cache:
-            raise Exception("Project not found")
+            # Try to load from file
+            project_file = cache_dir / f"project_{project_id}.json"
+            if project_file.exists():
+                with open(project_file, "r") as f:
+                    projects_cache[project_id] = json.load(f)
+            else:
+                raise Exception("Project not found")
         
         video_plan = projects_cache[project_id]["video_plan"]
         
         # Use appropriate director for export
         if use_enhanced and enhanced_director:
             checkpoint_data = enhanced_director.export_checkpoint_fibo_prompts(video_plan, checkpoint_id)
+        elif fibo_director:
+            checkpoint_data = fibo_director.export_checkpoint_fibo_prompts(video_plan, checkpoint_id)
         else:
-            checkpoint_data = director.export_checkpoint_fibo_prompts(video_plan, checkpoint_id)
+            raise Exception("No director available")
         
         if "error" in checkpoint_data:
             raise Exception(checkpoint_data["error"])
         
         print(f"   ✅ Checkpoint data retrieved")
-        print(f"   Start frame description: {checkpoint_data['fibo_start_frame'].get('short_description', 'N/A')[:100]}...")
         
         # Update progress
-        generation_status[generation_id].progress = 0.2
-        generation_status[generation_id].message = "Initializing FAL FIBO API..."
+        generation_status[generation_id].progress = 0.3
+        generation_status[generation_id].message = "Generating FIBO frames..."
         
-        # Try FAL integration
-        try:
-            from fal_fibo_integration import get_fal_integration
-            fal = get_fal_integration()
-            print(f"   ✅ FAL integration initialized")
+        # Try FAL integration if available
+        if FAL_AVAILABLE:
+            try:
+                fal = get_fal_integration()
+                print(f"   ✅ FAL integration initialized")
+                
+                # Generate both frames using FAL
+                generated_files = await fal.generate_checkpoint_frames(
+                    checkpoint_data["fibo_start_frame"],
+                    checkpoint_data["fibo_end_frame"],
+                    checkpoint_id,
+                    project_id,
+                    seed=checkpoint_id * 42 + 1000
+                )
+                
+                # Update progress
+                generation_status[generation_id].progress = 0.9
+                generation_status[generation_id].message = "Saving generated files..."
+                
+                # Copy generated files to cache directory
+                import shutil
+                
+                # Copy start frame files
+                start_image_cache = cache_dir / f"start_frame_{generation_id}.png"
+                start_json_cache = cache_dir / f"start_frame_{generation_id}.json"
+                
+                has_start_image = False
+                if generated_files.get("start_frame_image"):
+                    shutil.copy2(generated_files["start_frame_image"], start_image_cache)
+                    has_start_image = True
+                shutil.copy2(generated_files["start_frame_json"], start_json_cache)
+                
+                # Copy end frame files
+                end_image_cache = cache_dir / f"end_frame_{generation_id}.png"
+                end_json_cache = cache_dir / f"end_frame_{generation_id}.json"
+                
+                has_end_image = False
+                if generated_files.get("end_frame_image"):
+                    shutil.copy2(generated_files["end_frame_image"], end_image_cache)
+                    has_end_image = True
+                shutil.copy2(generated_files["end_frame_json"], end_json_cache)
+                
+                # Update final status
+                generation_status[generation_id].status = "completed"
+                generation_status[generation_id].progress = 1.0
+                
+                gen_times = generated_files.get("generation_times", {})
+                total_time = sum(gen_times.values()) if gen_times else 0
+                generation_status[generation_id].generation_time_sec = total_time
+                generation_status[generation_id].start_frame_cached = generated_files.get("start_frame_cached", False)
+                generation_status[generation_id].end_frame_cached = generated_files.get("end_frame_cached", False)
+                
+                if has_start_image and has_end_image:
+                    generation_status[generation_id].message = f"✅ Both frames ready in {total_time:.1f}s"
+                else:
+                    generation_status[generation_id].message = "⚠️ JSON prompts ready (image generation failed)"
+                
+                # Set URLs
+                if has_start_image:
+                    generation_status[generation_id].start_frame_url = f"/api/download/start_frame_{generation_id}.png"
+                else:
+                    generation_status[generation_id].start_frame_url = f"/api/download/start_frame_{generation_id}.json"
+                
+                if has_end_image:
+                    generation_status[generation_id].end_frame_url = f"/api/download/end_frame_{generation_id}.png"
+                else:
+                    generation_status[generation_id].end_frame_url = f"/api/download/end_frame_{generation_id}.json"
+                
+                print(f"   🎉 Generation complete in {total_time:.1f}s!")
+                
+            except Exception as fal_error:
+                print(f"   ❌ FAL generation failed: {fal_error}")
+                raise fal_error
+        else:
+            # Fallback: Save structured prompts only
+            print("   📝 FAL not available, saving structured prompts only")
             
-            # Update progress
-            generation_status[generation_id].progress = 0.3
-            generation_status[generation_id].message = "Generating start frame with FAL FIBO..."
-            
-            # Generate both frames using FAL
-            generated_files = await fal.generate_checkpoint_frames(
-                checkpoint_data["fibo_start_frame"],
-                checkpoint_data["fibo_end_frame"],
-                checkpoint_id,
-                project_id,
-                seed=checkpoint_id * 42 + 1000  # Deterministic seed based on checkpoint
-            )
-            
-            # Update progress
-            generation_status[generation_id].progress = 0.9
-            generation_status[generation_id].message = "Saving generated files..."
-            
-            # Copy generated files to cache directory for serving
-            import shutil
-            
-            # Copy start frame files
-            start_image_cache = cache_dir / f"start_frame_{generation_id}.png"
-            start_json_cache = cache_dir / f"start_frame_{generation_id}.json"
-            
-            has_start_image = False
-            if generated_files.get("start_frame_image"):
-                shutil.copy2(generated_files["start_frame_image"], start_image_cache)
-                has_start_image = True
-                print(f"   ✅ Start frame image copied to cache")
-            shutil.copy2(generated_files["start_frame_json"], start_json_cache)
-            
-            # Copy end frame files
-            end_image_cache = cache_dir / f"end_frame_{generation_id}.png"
-            end_json_cache = cache_dir / f"end_frame_{generation_id}.json"
-            
-            has_end_image = False
-            if generated_files.get("end_frame_image"):
-                shutil.copy2(generated_files["end_frame_image"], end_image_cache)
-                has_end_image = True
-                print(f"   ✅ End frame image copied to cache")
-            shutil.copy2(generated_files["end_frame_json"], end_json_cache)
-            
-            # Update final status with URLs
-            generation_status[generation_id].status = "completed"
-            generation_status[generation_id].progress = 1.0
-            
-            # Add timing and cache info
-            gen_times = generated_files.get("generation_times", {})
-            total_time = sum(gen_times.values()) if gen_times else 0
-            generation_status[generation_id].generation_time_sec = total_time
-            generation_status[generation_id].start_frame_cached = generated_files.get("start_frame_cached", False)
-            generation_status[generation_id].end_frame_cached = generated_files.get("end_frame_cached", False)
-            
-            # Determine success message with timing
-            cache_info = []
-            if generated_files.get("start_frame_cached"):
-                cache_info.append("start: cached")
-            if generated_files.get("end_frame_cached"):
-                cache_info.append("end: cached")
-            
-            if has_start_image and has_end_image:
-                cache_str = f" ({', '.join(cache_info)})" if cache_info else ""
-                generation_status[generation_id].message = f"✅ Both frames ready in {total_time:.1f}s{cache_str}"
-            elif has_start_image or has_end_image:
-                generation_status[generation_id].message = f"⚠️ Partial success in {total_time:.1f}s"
-            else:
-                generation_status[generation_id].message = "⚠️ JSON prompts ready (image generation failed)"
-            
-            # Set URLs - prefer S3/FAL URLs, fallback to local
-            if generated_files.get("start_frame_url"):
-                generation_status[generation_id].start_frame_url = generated_files["start_frame_url"]
-            elif has_start_image:
-                generation_status[generation_id].start_frame_url = f"/api/download/start_frame_{generation_id}.png"
-            else:
-                generation_status[generation_id].start_frame_url = f"/api/download/start_frame_{generation_id}.json"
-            
-            if generated_files.get("end_frame_url"):
-                generation_status[generation_id].end_frame_url = generated_files["end_frame_url"]
-            elif has_end_image:
-                generation_status[generation_id].end_frame_url = f"/api/download/end_frame_{generation_id}.png"
-            else:
-                generation_status[generation_id].end_frame_url = f"/api/download/end_frame_{generation_id}.json"
-            
-            print(f"   🎉 Generation complete in {total_time:.1f}s!")
-            print(f"   Start URL: {generation_status[generation_id].start_frame_url[:80]}...")
-            print(f"   End URL: {generation_status[generation_id].end_frame_url[:80]}...")
-            
-        except Exception as fal_error:
-            # If FAL generation fails, fall back to JSON-only mode
-            print(f"   ❌ FAL FIBO generation failed: {fal_error}")
-            import traceback
-            traceback.print_exc()
-            
-            generation_status[generation_id].progress = 0.8
-            generation_status[generation_id].message = "FAL API failed, saving structured prompts..."
-            
-            # Save structured prompts as fallback
             start_frame_file = cache_dir / f"start_frame_{generation_id}.json"
             end_frame_file = cache_dir / f"end_frame_{generation_id}.json"
             
@@ -450,12 +419,12 @@ async def generate_frames_background(project_id: str, checkpoint_id: int, genera
             with open(end_frame_file, "w") as f:
                 json.dump(checkpoint_data["fibo_end_frame"], f, indent=2)
             
-            # Update status with fallback completion
             generation_status[generation_id].status = "completed"
             generation_status[generation_id].progress = 1.0
-            generation_status[generation_id].message = f"JSON prompts ready (FAL error: {str(fal_error)[:100]})"
+            generation_status[generation_id].message = "✅ FIBO structured prompts ready"
             generation_status[generation_id].start_frame_url = f"/api/download/start_frame_{generation_id}.json"
             generation_status[generation_id].end_frame_url = f"/api/download/end_frame_{generation_id}.json"
+            generation_status[generation_id].generation_time_sec = 2.0
         
     except Exception as e:
         print(f"   ❌ Generation error: {e}")
@@ -466,7 +435,7 @@ async def generate_frames_background(project_id: str, checkpoint_id: int, genera
 
 @app.get("/api/generation-status/{generation_id}")
 async def get_generation_status(generation_id: str):
-    """Get the status of frame generation."""
+    """Get generation status."""
     if generation_id not in generation_status:
         raise HTTPException(status_code=404, detail="Generation not found")
     
@@ -495,51 +464,142 @@ async def download_file(filename: str):
         media_type=media_type
     )
 
-@app.get("/api/fibo-status")
-async def get_fibo_status():
-    """Get FIBO installation and configuration status."""
-    try:
-        from fibo_integration import get_fibo_integration
-        
-        fibo = get_fibo_integration()
-        status = fibo.check_fibo_status()
-        models = fibo.get_available_models()
-        
-        return {
-            "status": status,
-            "available_models": models,
-            "integration_ready": all([
-                status.get("generate_script", False),
-                status.get("src_directory", False),
-                status.get("output_writable", False),
-                status.get("google_api_key", False)
-            ])
-        }
-        
-    except Exception as e:
-        return {
-            "status": {"error": str(e)},
-            "available_models": {},
-            "integration_ready": False
-        }
-
-
 @app.get("/api/cache-stats")
 async def get_cache_stats():
-    """Get frame cache statistics."""
+    """Get cache statistics."""
     try:
+        # Try to get S3 cache stats if available
         from s3_storage import get_s3_storage
         storage = get_s3_storage()
         return storage.get_cache_stats()
     except ImportError:
-        return {"error": "S3 storage not available", "s3_available": False}
+        # Fallback to local cache stats
+        return {
+            'projects_cached': len(projects_cache),
+            'generations_tracked': len(generation_status),
+            'cache_type': 'local',
+            's3_available': False
+        }
     except Exception as e:
-        return {"error": str(e), "s3_available": False}
+        return {
+            'projects_cached': len(projects_cache),
+            'generations_tracked': len(generation_status),
+            'cache_type': 'local',
+            'error': str(e),
+            's3_available': False
+        }
+
+def create_intelligent_fallback_plan(script_text: str) -> Dict[str, Any]:
+    """Create intelligent fallback plan when FIBO director is not available."""
+    
+    # Analyze script content
+    script_lower = script_text.lower()
+    
+    # Determine project title based on content
+    if any(word in script_lower for word in ['forest', 'tree', 'nature', 'woods', 'magical']):
+        title = "Enchanted Forest Adventure"
+        environment = "Mystical forest with ancient trees and magical atmosphere"
+        lighting = "Dappled sunlight filtering through magical forest canopy"
+    elif any(word in script_lower for word in ['city', 'street', 'urban', 'building']):
+        title = "Urban Chronicles"
+        environment = "Modern cityscape with urban architecture"
+        lighting = "Urban lighting with neon and street lights"
+    elif any(word in script_lower for word in ['mountain', 'peak', 'summit', 'climb']):
+        title = "Mountain Peak Journey"
+        environment = "Majestic mountain landscape with panoramic views"
+        lighting = "Golden hour mountain lighting with dramatic shadows"
+    elif any(word in script_lower for word in ['wizard', 'magic', 'spell', 'mystical', 'staff']):
+        title = "Mystical Realms"
+        environment = "Magical realm with mystical energy and enchanted elements"
+        lighting = "Magical lighting with glowing mystical energy"
+    else:
+        title = "Cinematic Vision"
+        environment = "Professional cinematic environment"
+        lighting = "Cinematic three-point lighting"
+    
+    return {
+        'project_title': title,
+        'production_id': f"local_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        'created_at': datetime.now().isoformat(),
+        'total_duration_sec': 16,
+        'visual_style': {
+            'lighting_style': lighting,
+            'color_palette': 'Natural, cinematic color grading with rich tones',
+            'camera_style': 'Professional 50mm lens, f/2.8 aperture, cinematic depth',
+            'environment_theme': environment,
+            'artistic_direction': 'Photorealistic, high production value, cinematic quality'
+        },
+        'checkpoints': [
+            {
+                'checkpoint_id': 1,
+                'start_time_sec': 0,
+                'end_time_sec': 8,
+                'duration_sec': 8,
+                'scene_description': f"Opening scene: {script_text[:200]}",
+                'is_continuation': False,
+                'visual_consistency_notes': 'Establishes the visual style and cinematic tone',
+                'fibo_start_frame': create_intelligent_fibo_prompt('start', environment, lighting),
+                'fibo_end_frame': create_intelligent_fibo_prompt('transition', environment, lighting),
+                'video_generation_notes': 'Smooth cinematic introduction with establishing shots'
+            },
+            {
+                'checkpoint_id': 2,
+                'start_time_sec': 8,
+                'end_time_sec': 16,
+                'duration_sec': 8,
+                'scene_description': f"Concluding scene: {script_text[len(script_text)//2:len(script_text)//2+200]}",
+                'is_continuation': True,
+                'visual_consistency_notes': 'Maintains visual continuity while building to climax',
+                'fibo_start_frame': create_intelligent_fibo_prompt('continuation', environment, lighting),
+                'fibo_end_frame': create_intelligent_fibo_prompt('conclusion', environment, lighting),
+                'video_generation_notes': 'Dramatic conclusion with impactful visual storytelling'
+            }
+        ],
+        'metadata': {
+            'agent_system': 'Intelligent Fallback Director',
+            'model': 'local-analysis',
+            'version': '1.0.0-local'
+        }
+    }
+
+def create_intelligent_fibo_prompt(frame_type: str, environment: str, lighting: str) -> Dict[str, Any]:
+    """Create intelligent FIBO structured prompt."""
+    return {
+        'short_description': f'{frame_type.title()} frame with cinematic composition',
+        'objects': [
+            {
+                'description': 'Main character from scene analysis',
+                'location': 'Center frame using rule of thirds composition',
+                'relationship': 'Primary subject and focal point of the scene',
+                'relative_size': 'Prominent figure occupying 1/3 of frame height',
+                'shape_and_color': 'Natural, realistic human proportions with authentic coloring',
+                'texture': 'Photorealistic skin and fabric textures with fine detail',
+                'appearance_details': 'High-resolution facial features, detailed clothing, realistic materials',
+                'pose': 'Natural, contextually appropriate positioning',
+                'expression': 'Emotionally appropriate to scene context',
+                'orientation': 'Facing camera or in contextually appropriate direction'
+            }
+        ],
+        'background_setting': environment,
+        'lighting': lighting,
+        'aesthetics': {
+            'composition': 'Cinematic rule of thirds with balanced visual weight',
+            'color_scheme': 'Rich, saturated colors with natural harmony',
+            'mood_atmosphere': 'Epic, cinematic atmosphere with emotional depth'
+        },
+        'photographic_characteristics': {
+            'depth_of_field': 'Shallow depth of field with subject in sharp focus',
+            'camera_angle': 'Eye-level perspective with slight heroic angle',
+            'lens_focal_length': '50mm equivalent with natural perspective'
+        },
+        'style_medium': 'Photorealistic digital cinematography, high production value'
+    }
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "api_server:app",
-        host="127.0.0.1",
-        port=8000,
-        reload=False
-    )
+    print("🎬 FIBO Video Director - Local Development Server")
+    print("=" * 50)
+    print("🌐 Starting server at http://localhost:8000")
+    print("📚 API docs at http://localhost:8000/docs")
+    print("=" * 50)
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

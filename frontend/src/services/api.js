@@ -1,121 +1,107 @@
-import axios from 'axios';
+// API service for FIBO Video Director
+// Local development configuration
 
-// Create axios instance with base configuration
-const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
-  timeout: 120000, // 2 minutes for AI generation
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// Use relative URLs when proxy is configured in package.json
+const API_BASE_URL = process.env.NODE_ENV === 'development' ? '' : 'http://localhost:8000';
 
-// Request interceptor for logging
-api.interceptors.request.use(
-  (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
+// Helper function for API requests
+const request = async (endpoint, options = {}) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
 
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => {
-    console.log(`API Response: ${response.status} ${response.config.url}`);
-    return response;
-  },
-  (error) => {
-    console.error('API Response Error:', error.response?.data || error.message);
+  try {
+    const response = await fetch(url, config);
     
-    if (error.response?.status === 404) {
-      throw new Error('Resource not found');
-    } else if (error.response?.status === 500) {
-      throw new Error('Server error. Please try again later.');
-    } else if (error.code === 'ECONNABORTED') {
-      throw new Error('Request timeout. Please try again.');
-    } else {
-      throw new Error(error.response?.data?.detail || error.message || 'An error occurred');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
-);
+};
 
-// API Functions
+// Health check
+export const healthCheck = async () => {
+  return request('/');
+};
 
-/**
- * Generate a video plan from a movie script
- * @param {string} scriptText - The movie script text
- * @returns {Promise<Object>} Video plan with checkpoints
- */
+// Generate video plan from script
 export const generateVideoPlan = async (scriptText) => {
-  const response = await api.post('/api/generate-plan', {
-    script_text: scriptText,
+  console.log('=== API: generateVideoPlan called ===');
+  console.log('API_BASE_URL:', API_BASE_URL);
+  console.log('Script text length:', scriptText.length);
+  
+  const result = await request('/api/generate-plan', {
+    method: 'POST',
+    body: JSON.stringify({ script_text: scriptText }),
   });
-  return response.data;
+  
+  console.log('=== API: generateVideoPlan result ===');
+  console.log('Result:', result);
+  return result;
 };
 
-/**
- * Get project details by ID
- * @param {string} projectId - The project ID
- * @returns {Promise<Object>} Project details
- */
+// Get project details
 export const getProject = async (projectId) => {
-  const response = await api.get(`/api/project/${projectId}`);
-  return response.data;
+  return request(`/api/project/${projectId}`);
 };
 
-/**
- * Get FIBO structured prompts for a specific checkpoint
- * @param {string} projectId - The project ID
- * @param {number} checkpointId - The checkpoint ID
- * @returns {Promise<Object>} Checkpoint prompts and data
- */
+// Get checkpoint details
 export const getCheckpointPrompts = async (projectId, checkpointId) => {
-  const response = await api.get(`/api/checkpoint/${projectId}/${checkpointId}`);
-  return response.data;
+  return request(`/api/checkpoint/${projectId}/${checkpointId}`);
 };
 
-/**
- * Start frame generation for a checkpoint
- * @param {string} projectId - The project ID
- * @param {number} checkpointId - The checkpoint ID
- * @returns {Promise<Object>} Generation response with generation_id
- */
+// Generate frames
 export const generateFrames = async (projectId, checkpointId) => {
-  const response = await api.post('/api/generate-frames', {
-    project_id: projectId,
-    checkpoint_id: checkpointId,
+  return request('/api/generate-frames', {
+    method: 'POST',
+    body: JSON.stringify({ 
+      project_id: projectId, 
+      checkpoint_id: checkpointId 
+    }),
   });
-  return response.data;
 };
 
-/**
- * Get the status of frame generation
- * @param {string} generationId - The generation ID
- * @returns {Promise<Object>} Generation status
- */
+// Get generation status
 export const getGenerationStatus = async (generationId) => {
-  const response = await api.get(`/api/generation-status/${generationId}`);
-  return response.data;
+  return request(`/api/generation-status/${generationId}`);
 };
 
-/**
- * Download a file from the server
- * @param {string} url - The file URL (relative to API base)
- * @param {string} filename - The desired filename
- */
+// Get director mode
+export const getDirectorMode = async () => {
+  return request('/api/director-mode');
+};
+
+// Get cache stats
+export const getCacheStats = async () => {
+  return request('/api/cache-stats');
+};
+
+// Download file
 export const downloadFile = async (url, filename) => {
   // Remove leading slash if present to avoid double slashes
   const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
   
-  const response = await api.get(`/${cleanUrl}`, {
-    responseType: 'blob',
+  const response = await fetch(`${API_BASE_URL}/${cleanUrl}`, {
+    method: 'GET',
   });
   
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.status}`);
+  }
+  
   // Create blob link to download
-  const blob = new Blob([response.data]);
+  const blob = await response.blob();
   const link = document.createElement('a');
   link.href = window.URL.createObjectURL(blob);
   link.download = filename;
@@ -127,15 +113,6 @@ export const downloadFile = async (url, filename) => {
   
   // Clean up
   window.URL.revokeObjectURL(link.href);
-};
-
-/**
- * Health check endpoint
- * @returns {Promise<Object>} Server status
- */
-export const healthCheck = async () => {
-  const response = await api.get('/');
-  return response.data;
 };
 
 // Cache management utilities
@@ -210,6 +187,20 @@ export const cache = {
       console.error('Cache clear error:', error);
     }
   },
+};
+
+// Default export for backward compatibility
+const api = {
+  healthCheck,
+  generateVideoPlan,
+  getProject,
+  getCheckpointPrompts,
+  generateFrames,
+  getGenerationStatus,
+  getDirectorMode,
+  getCacheStats,
+  downloadFile,
+  cache
 };
 
 export default api;

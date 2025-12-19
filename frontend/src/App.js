@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+ import React, { useState, useCallback, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import ScriptInput from './components/ScriptInput';
 import VideoTimeline from './components/VideoTimeline';
@@ -29,9 +29,15 @@ function App() {
   }, [videoPlan?.project_id]);
 
   const handlePlanGenerated = useCallback((plan) => {
+    console.log('=== APP.JS: handlePlanGenerated called ===');
+    console.log('Received plan:', plan);
+    console.log('Plan has checkpoints:', plan?.checkpoints?.length || 0);
+    
     setVideoPlan(plan);
     setSelectedCheckpoint(null);
     setGeneratedCheckpoints({});
+    
+    console.log('✅ App state updated, should show timeline now');
   }, []);
 
   const handleCheckpointSelect = useCallback((checkpoint) => {

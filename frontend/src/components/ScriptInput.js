@@ -107,25 +107,34 @@ function ScriptInput({ onPlanGenerated, loading, setLoading }) {
       return;
     }
 
+    console.log('=== SCRIPT SUBMISSION STARTED ===');
+    console.log('Script length:', scriptText.length);
+    console.log('Script preview:', scriptText.substring(0, 100));
+    
     setLoading(true);
     
     try {
-      console.log('Sending script to backend...');
+      console.log('Calling generateVideoPlan...');
       const plan = await generateVideoPlan(scriptText);
-      console.log('Received plan:', plan);
+      console.log('=== PLAN RECEIVED ===');
+      console.log('Plan structure:', JSON.stringify(plan, null, 2));
       
       if (plan && plan.checkpoints && plan.checkpoints.length > 0) {
+        console.log('✅ Valid plan received, calling onPlanGenerated');
         toast.success('Video plan generated successfully!');
         onPlanGenerated(plan);
+        console.log('✅ onPlanGenerated called');
       } else {
-        console.error('Invalid plan structure:', plan);
+        console.error('❌ Invalid plan structure:', plan);
         toast.error('Invalid response from server. Check console for details.');
       }
     } catch (error) {
-      console.error('Error generating plan:', error);
+      console.error('❌ Error generating plan:', error);
+      console.error('Error details:', error.message, error.stack);
       toast.error(`Failed: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
+      console.log('=== SCRIPT SUBMISSION COMPLETED ===');
     }
   };
 
