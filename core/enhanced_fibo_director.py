@@ -199,27 +199,132 @@ def create_fibo_frame_prompt(
 
 @tool
 def create_video_motion_notes(
-    start_state: str,
-    end_state: str,
-    camera_movement: str
+    scene_content: str,
+    start_frame_description: str,
+    end_frame_description: str,
+    segment_duration: str = "8 seconds"
 ) -> str:
-    """Create video generation notes describing motion between frames.
+    """Create detailed video generation prompt optimized for video AI models like Veo.
     
     Args:
-        start_state: Description of starting visual state
-        end_state: Description of ending visual state
-        camera_movement: Type of camera movement (static, pan, dolly, etc.)
+        scene_content: The actual script content for this segment
+        start_frame_description: Description of the starting frame
+        end_frame_description: Description of the ending frame
+        segment_duration: Duration of the video segment
     """
-    motion_notes = {
-        "start_state_summary": start_state[:200],
-        "end_state_summary": end_state[:200],
-        "camera_movement": camera_movement,
-        "motion_description": f"Smooth transition from {start_state[:50]}... to {end_state[:50]}...",
-        "pacing": "Cinematic, measured movement",
-        "continuity_notes": "Maintain consistent lighting and color throughout transition"
+    
+    # Analyze scene content for specific elements
+    scene_lower = scene_content.lower()
+    
+    # Extract dialogue if present
+    dialogue_lines = []
+    action_lines = []
+    
+    for line in scene_content.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Check if it's dialogue (character name followed by dialogue)
+        if any(char.isupper() for char in line[:20]) and not line.startswith(('EXT.', 'INT.', 'FADE', 'CUT')):
+            if '(' in line and ')' in line:  # Action in parentheses
+                action_lines.append(line)
+            else:
+                dialogue_lines.append(line)
+        else:
+            action_lines.append(line)
+    
+    # Determine camera movement based on scene content
+    camera_movement = "Static shot"
+    if any(word in scene_lower for word in ['walks', 'runs', 'moves', 'approaches']):
+        camera_movement = "Smooth tracking shot following character movement"
+    elif any(word in scene_lower for word in ['turns', 'looks', 'faces']):
+        camera_movement = "Subtle pan following character's gaze"
+    elif any(word in scene_lower for word in ['reveals', 'shows', 'appears']):
+        camera_movement = "Slow reveal with gentle dolly movement"
+    elif any(word in scene_lower for word in ['close', 'closeup', 'detail']):
+        camera_movement = "Slow push-in to close-up"
+    
+    # Determine pacing and mood
+    pacing = "Measured, cinematic pacing"
+    if any(word in scene_lower for word in ['urgent', 'quickly', 'suddenly', 'rush']):
+        pacing = "Fast-paced, dynamic movement"
+    elif any(word in scene_lower for word in ['slowly', 'gentle', 'calm', 'peaceful']):
+        pacing = "Slow, contemplative pacing"
+    elif any(word in scene_lower for word in ['tense', 'suspense', 'danger']):
+        pacing = "Tense, building suspense"
+    
+    # Determine lighting and atmosphere changes
+    lighting_transition = "Consistent lighting throughout"
+    if any(word in scene_lower for word in ['shadow', 'dark', 'dim']):
+        lighting_transition = "Gradual transition to darker, more dramatic lighting"
+    elif any(word in scene_lower for word in ['bright', 'light', 'sun', 'glow']):
+        lighting_transition = "Brightening lighting with warm tones"
+    elif any(word in scene_lower for word in ['flicker', 'flash', 'strobe']):
+        lighting_transition = "Dynamic lighting changes with flickering effects"
+    
+    # Create comprehensive video prompt
+    video_prompt = {
+        "duration": segment_duration,
+        "scene_summary": scene_content[:300] + "..." if len(scene_content) > 300 else scene_content,
+        
+        # Visual Transition
+        "visual_transition": {
+            "start_frame": start_frame_description[:200],
+            "end_frame": end_frame_description[:200],
+            "transition_type": "Smooth cinematic transition maintaining visual continuity"
+        },
+        
+        # Camera Work
+        "camera_work": {
+            "movement": camera_movement,
+            "shot_type": "Professional cinematic framing",
+            "focus": "Sharp focus on main subjects with cinematic depth of field",
+            "composition": "Rule of thirds, balanced composition"
+        },
+        
+        # Action & Movement
+        "action_description": {
+            "character_actions": [action.strip() for action in action_lines[:3]],  # Top 3 actions
+            "movement_flow": "Natural, realistic character movement and gestures",
+            "pacing": pacing,
+            "continuity": "Seamless action flow from start to end frame"
+        },
+        
+        # Dialogue & Audio Cues
+        "dialogue_cues": {
+            "spoken_lines": [dialogue.strip() for dialogue in dialogue_lines[:2]],  # Top 2 dialogue lines
+            "delivery_style": "Natural, emotionally appropriate delivery",
+            "timing": "Dialogue synchronized with character lip movement and gestures",
+            "audio_atmosphere": "Ambient sound appropriate to scene setting"
+        },
+        
+        # Lighting & Atmosphere
+        "lighting_atmosphere": {
+            "lighting_transition": lighting_transition,
+            "mood_progression": "Consistent emotional tone throughout segment",
+            "color_grading": "Cinematic color palette maintaining visual style",
+            "atmospheric_effects": "Subtle environmental effects (dust, mist, particles) if appropriate"
+        },
+        
+        # Technical Specifications
+        "technical_specs": {
+            "frame_rate": "24fps for cinematic feel",
+            "resolution": "4K for high quality output",
+            "aspect_ratio": "16:9 widescreen",
+            "motion_blur": "Natural motion blur for realistic movement"
+        },
+        
+        # Video AI Optimization
+        "veo_optimization": {
+            "prompt_style": "Cinematic, professional video production",
+            "quality_keywords": "high quality, detailed, realistic, smooth motion",
+            "avoid": "jumpcuts, inconsistent lighting, unnatural movement",
+            "enhance": "natural character expressions, realistic physics, professional cinematography"
+        }
     }
     
-    return json.dumps(motion_notes, indent=2)
+    return json.dumps(video_prompt, indent=2)
 
 
 # =============================================================================
@@ -307,20 +412,28 @@ OUTPUT: Return visual_style JSON that will be applied to ALL FIBO prompts."""
 
 YOUR ROLE:
 - Create detailed FIBO structured JSON prompts for start and end frames
-- Write video motion notes describing transitions
-- Ensure visual continuity between segments
+- Write SCENE-SPECIFIC video motion notes optimized for video AI models like Veo
+- Ensure visual continuity between segments while capturing unique scene elements
 
 FOR EACH SEGMENT, CREATE:
 1. fibo_start_frame: Detailed structured JSON for opening frame
 2. fibo_end_frame: Detailed structured JSON for closing frame  
-3. video_generation_notes: Motion description for the transition
+3. video_generation_notes: SCENE-SPECIFIC motion description with:
+   - Actual dialogue from the script
+   - Specific character actions and movements
+   - Appropriate camera work for the scene
+   - Lighting and atmosphere changes
+   - Technical specifications for video AI
 
 CRITICAL RULES:
 - If segment is_continuation=true, start_frame MUST match previous end_frame
 - Use the visual_style from Cinematographer for consistency
 - Create production-ready FIBO structured prompts
+- Make video_generation_notes UNIQUE for each scene - analyze the actual script content
+- Include specific dialogue lines, character actions, and camera movements
+- Optimize prompts for video AI models (Veo, Runway, etc.)
 
-OUTPUT: Return checkpoint data with complete FIBO prompts."""
+OUTPUT: Return checkpoint data with complete FIBO prompts and scene-specific video notes."""
         )
     
     def process_script(self, script_text: str) -> Dict[str, Any]:
@@ -415,10 +528,12 @@ Segment Content: {segment_content}
 Visual Style: {visual_style_json}
 Is Continuation: {is_continuation}
 
-Create:
+Create detailed prompts for this specific scene:
 1. Start frame FIBO prompt using create_fibo_frame_prompt
-2. End frame FIBO prompt using create_fibo_frame_prompt
-3. Video motion notes using create_video_motion_notes"""
+2. End frame FIBO prompt using create_fibo_frame_prompt  
+3. Scene-specific video motion notes using create_video_motion_notes with the actual segment content
+
+Make sure the video motion notes are specific to this scene's actions, dialogue, and camera work."""
 
                 action_response = self.agents["action_director"](action_prompt)
                 
@@ -611,6 +726,144 @@ Create:
             "film_stock": "Digital cinema, slight grain, high dynamic range"
         }
     
+    def _create_scene_specific_video_notes(self, scene_content: str, start_desc: str, end_desc: str) -> str:
+        """Create scene-specific video notes when agent processing fails."""
+        
+        # Analyze scene content for specific elements
+        scene_lower = scene_content.lower()
+        lines = [l.strip() for l in scene_content.split('\n') if l.strip()]
+        
+        # Extract dialogue and actions
+        dialogue_lines = []
+        action_lines = []
+        character_actions = []
+        
+        for line in lines:
+            if not line:
+                continue
+                
+            # Check for character dialogue (UPPERCASE name followed by dialogue)
+            if line.isupper() and len(line) < 50:  # Character name
+                continue
+            elif '(' in line and ')' in line:  # Stage directions
+                action_lines.append(line.strip('()'))
+                if any(word in line.lower() for word in ['walks', 'runs', 'moves', 'turns', 'looks', 'grabs', 'opens']):
+                    character_actions.append(line.strip('()'))
+            elif not line.startswith(('EXT.', 'INT.', 'FADE', 'CUT')) and not line.isupper():
+                # Likely dialogue
+                dialogue_lines.append(line)
+            else:
+                # Action description
+                action_lines.append(line)
+                if any(word in line.lower() for word in ['walks', 'runs', 'moves', 'turns', 'looks', 'grabs', 'opens']):
+                    character_actions.append(line)
+        
+        # Determine camera movement based on scene content
+        camera_movement = "Static cinematic shot with subtle movement"
+        if any(word in scene_lower for word in ['walks', 'runs', 'moves', 'approaches', 'steps']):
+            camera_movement = "Smooth tracking shot following character movement"
+        elif any(word in scene_lower for word in ['turns', 'looks', 'faces', 'glances']):
+            camera_movement = "Subtle pan following character's gaze and attention"
+        elif any(word in scene_lower for word in ['reveals', 'shows', 'appears', 'emerges']):
+            camera_movement = "Slow reveal with gentle dolly movement"
+        elif any(word in scene_lower for word in ['close', 'closeup', 'detail', 'focus']):
+            camera_movement = "Slow push-in to close-up for dramatic emphasis"
+        elif any(word in scene_lower for word in ['urgent', 'quickly', 'rush', 'hurry']):
+            camera_movement = "Dynamic handheld movement conveying urgency"
+        
+        # Determine pacing and mood
+        pacing = "Measured, cinematic pacing"
+        if any(word in scene_lower for word in ['urgent', 'quickly', 'suddenly', 'rush', 'hurry']):
+            pacing = "Fast-paced, dynamic movement with quick cuts"
+        elif any(word in scene_lower for word in ['slowly', 'gentle', 'calm', 'peaceful', 'quiet']):
+            pacing = "Slow, contemplative pacing with lingering shots"
+        elif any(word in scene_lower for word in ['tense', 'suspense', 'danger', 'worried', 'afraid']):
+            pacing = "Tense, building suspense with deliberate timing"
+        
+        # Determine lighting and atmosphere
+        lighting_transition = "Consistent cinematic lighting throughout"
+        if any(word in scene_lower for word in ['night', 'dark', 'shadow', 'dim']):
+            lighting_transition = "Dramatic low-key lighting with strong shadows"
+        elif any(word in scene_lower for word in ['neon', 'glow', 'electric', 'bright']):
+            lighting_transition = "Dynamic lighting with neon and electric effects"
+        elif any(word in scene_lower for word in ['rain', 'storm', 'weather']):
+            lighting_transition = "Atmospheric lighting with weather effects"
+        
+        # Extract specific environment details
+        environment_details = "Professional cinematic environment"
+        if 'cyberpunk' in scene_lower or 'neon' in scene_lower:
+            environment_details = "Cyberpunk cityscape with neon lighting and futuristic elements"
+        elif 'city' in scene_lower or 'street' in scene_lower:
+            environment_details = "Urban environment with realistic city atmosphere"
+        elif 'alley' in scene_lower:
+            environment_details = "Narrow alley with dramatic lighting and shadows"
+        elif 'portal' in scene_lower or 'energy' in scene_lower:
+            environment_details = "Sci-fi environment with energy effects and technological elements"
+        
+        # Create comprehensive video notes optimized for video AI
+        video_notes = {
+            "duration": "8 seconds",
+            "scene_summary": scene_content[:300] + "..." if len(scene_content) > 300 else scene_content,
+            
+            # Visual Transition
+            "visual_transition": {
+                "start_frame": start_desc,
+                "end_frame": end_desc,
+                "transition_type": "Smooth cinematic transition maintaining visual continuity"
+            },
+            
+            # Camera Work
+            "camera_work": {
+                "movement": camera_movement,
+                "shot_type": "Professional cinematic framing with rule of thirds",
+                "focus": "Sharp focus on main subjects with cinematic depth of field",
+                "composition": "Balanced composition with dynamic visual interest"
+            },
+            
+            # Action & Movement
+            "action_description": {
+                "character_actions": character_actions[:3] if character_actions else ["Natural character movement and gestures"],
+                "movement_flow": "Realistic character movement with natural physics",
+                "pacing": pacing,
+                "continuity": "Seamless action flow from start to end frame"
+            },
+            
+            # Dialogue & Audio Cues
+            "dialogue_cues": {
+                "spoken_lines": dialogue_lines[:2] if dialogue_lines else [],
+                "delivery_style": "Natural, emotionally appropriate delivery",
+                "timing": "Dialogue synchronized with character lip movement",
+                "audio_atmosphere": f"Ambient sound appropriate to {environment_details.lower()}"
+            },
+            
+            # Lighting & Atmosphere
+            "lighting_atmosphere": {
+                "lighting_transition": lighting_transition,
+                "mood_progression": "Consistent emotional tone throughout segment",
+                "color_grading": "Cinematic color palette with professional grading",
+                "atmospheric_effects": "Subtle environmental effects enhancing realism"
+            },
+            
+            # Technical Specifications
+            "technical_specs": {
+                "frame_rate": "24fps for cinematic feel",
+                "resolution": "4K for high quality output",
+                "aspect_ratio": "16:9 widescreen",
+                "motion_blur": "Natural motion blur for realistic movement"
+            },
+            
+            # Video AI Optimization (Veo, Runway, etc.)
+            "veo_optimization": {
+                "prompt_style": "Cinematic, professional video production",
+                "quality_keywords": "high quality, detailed, realistic, smooth motion, professional cinematography",
+                "environment": environment_details,
+                "avoid": "jumpcuts, inconsistent lighting, unnatural movement, low quality",
+                "enhance": "natural expressions, realistic physics, smooth transitions, cinematic composition"
+            }
+        }
+        
+        return json.dumps(video_notes, indent=2)
+    
     def _create_checkpoint(
         self,
         checkpoint_id: int,
@@ -643,12 +896,16 @@ Create:
             visual_style
         )
         
-        # Build video notes
-        video_notes = extracted.get("video_generation_notes", {
-            "motion_description": "Smooth cinematic transition",
-            "camera_movement": "Subtle movement",
-            "pacing": "Measured, cinematic"
-        })
+        # Build video notes with scene-specific content
+        if isinstance(extracted, dict) and extracted.get("video_generation_notes"):
+            video_notes = extracted["video_generation_notes"]
+        else:
+            # Create scene-specific fallback video notes
+            video_notes = self._create_scene_specific_video_notes(
+                segment.get("content", "Scene content"),
+                start_frame.get("short_description", "Start frame"),
+                end_frame.get("short_description", "End frame")
+            )
         
         return {
             "checkpoint_id": checkpoint_id,
@@ -744,7 +1001,11 @@ Create:
                 "visual_consistency_notes": f"Maintains {visual_style['artistic_direction']} style",
                 "fibo_start_frame": self._create_default_fibo_prompt("start", segment["content"][:100], visual_style),
                 "fibo_end_frame": self._create_default_fibo_prompt("end", segment["content"][:100], visual_style),
-                "video_generation_notes": "Smooth cinematic transition with professional pacing"
+                "video_generation_notes": self._create_scene_specific_video_notes(
+                    segment["content"],
+                    f"Start frame: {segment['content'][:50]}...",
+                    f"End frame: {segment['content'][50:100]}..."
+                )
             }
             checkpoints.append(checkpoint)
         
