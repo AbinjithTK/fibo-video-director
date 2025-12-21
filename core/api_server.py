@@ -124,8 +124,8 @@ async def startup_event():
         fibo_director = None
 
 @app.get("/")
-async def health_check():
-    """Health check endpoint."""
+async def root():
+    """Root endpoint with API information."""
     return {
         "message": "FIBO Video Director API - Local Development",
         "status": "running",
@@ -136,6 +136,15 @@ async def health_check():
         "google_api_configured": bool(os.environ.get("GOOGLE_API_KEY")),
         "fal_configured": bool(os.environ.get("FAL_KEY")),
         "active_mode": "enhanced" if use_enhanced and enhanced_director else "standard",
+        "version": "2.0.0-local"
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "service": "fibo-video-director-api",
         "version": "2.0.0-local"
     }
 

@@ -32,10 +32,10 @@ A sophisticated video production planning tool that uses **multi-agent AI collab
 
 ### Prerequisites
 
-- **Python 3.10+** with pip or uv package manager
-- **Node.js 16+** and npm for frontend
+- **Python 3.10+** with pip
+- **Node.js 16+** and npm
 - **Google Gemini API Key** (free tier available)
-- **FAL.ai API Key** for image generation (optional)
+- **FAL.ai API Key** for image generation
 
 ### 1. Clone Repository
 
@@ -44,48 +44,45 @@ git clone https://github.com/AbinjithTK/fibo-video-director.git
 cd fibo-video-director
 ```
 
-### 2. Environment Setup
-
-Run the interactive setup script:
+### 2. Setup Environment
 
 ```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Setup environment variables
 python scripts/setup-env.py
+
+# Install frontend dependencies
+cd frontend
+npm install
+cd ..
 ```
 
-This will:
-- ✅ Create your `.env` file with API keys
-- ✅ Install Python dependencies
-- ✅ Install frontend dependencies
-- ✅ Verify all components are working
+### 3. Start the Application
 
-### 3. Test the Setup
-
-Verify the cleaned structure works:
-
+**Terminal 1: Start Backend**
 ```bash
-python test_app.py
-```
-
-### 4. Start the Application
-
-**Option A: Quick Start (Recommended)**
-```bash
-python scripts/start_fibo_app.py
-```
-
-**Option B: Manual Start**
-```bash
-# Terminal 1: Start Backend
 python app.py
+```
 
-# Terminal 2: Start Frontend
+**Terminal 2: Start Frontend**
+```bash
 cd frontend
 npm start
 ```
 
-### 4. Open Application
+### 4. Test & Open
 
-Navigate to **http://localhost:3000** in your browser.
+```bash
+# Verify setup is working
+python test_local_setup.py
+
+# Open in browser
+# http://localhost:3000
+```
+
+That's it! 🎬 Your FIBO Video Director is ready!
 
 ## 📖 Usage Guide
 
