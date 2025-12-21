@@ -71,6 +71,7 @@ class ScriptRequest(BaseModel):
 class GenerateFramesRequest(BaseModel):
     project_id: str
     checkpoint_id: int
+    camera_settings: Optional[Dict[str, Any]] = None
 
 class GenerationStatus(BaseModel):
     status: str  # "pending", "generating", "completed", "error"
@@ -175,6 +176,89 @@ async def set_director_mode(enable_enhanced: bool = True):
         "enhanced_enabled": use_enhanced,
         "mode": "enhanced" if use_enhanced and enhanced_director else "standard"
     }
+
+def apply_camera_settings_to_prompts(checkpoint_data: Dict[str, Any], camera_settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Apply custom camera settings to FIBO prompts."""
+    
+    def update_frame_prompt(frame_prompt: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a single frame prompt with camera settings."""
+        updated_prompt = frame_prompt.copy()
+        
+        # Update photographic characteristics
+        if "photographic_characteristics" not in updated_prompt:
+            updated_prompt["photographic_characteristics"] = {}
+        
+        photo_chars = updated_prompt["photographic_characteristics"]
+        
+        # Apply camera angle
+        if "angle" in camera_settings:
+            photo_chars["camera_angle"] = camera_settings["angle"]
+        
+        # Apply focal length
+        if "focalLength" in camera_settings:
+            photo_chars["lens_focal_length"] = f"{camera_settings['focalLength']}mm"
+        
+        # Apply aperture for depth of field
+        if "aperture" in camera_settings:
+            aperture = camera_settings["aperture"]
+            if aperture <= 2.0:
+                photo_chars["depth_of_field"] = "Very shallow DOF, strong bokeh"
+            elif aperture <= 4.0:
+                photo_chars["depth_of_field"] = "Shallow DOF, cinematic"
+            elif aperture <= 8.0:
+                photo_chars["depth_of_field"] = "Moderate DOF, balanced"
+            else:
+                photo_chars["depth_of_field"] = "Deep DOF, everything in focus"
+        
+        # Apply camera movement to description
+        if "movement" in camera_settings and camera_settings["movement"] != "Static":
+            movement = camera_settings["movement"]
+            if "short_description" in updated_prompt:
+                updated_prompt["short_description"] += f" [{movement} camera movement]"
+        
+        # Update aesthetics with camera info
+        if "aesthetics" not in updated_prompt:
+            updated_prompt["aesthetics"] = {}
+        
+        aesthetics = updated_prompt["aesthetics"]
+        
+        # Add camera-specific composition notes
+        if "angle" in camera_settings:
+            angle = camera_settings["angle"]
+            if "Low Angle" in angle:
+                aesthetics["composition"] = "Low angle, dramatic perspective, subject appears powerful"
+            elif "High Angle" in angle:
+                aesthetics["composition"] = "High angle, bird's eye view, subject appears vulnerable"
+            elif "Dutch Angle" in angle:
+                aesthetics["composition"] = "Dutch angle, tilted horizon, dynamic tension"
+            else:
+                aesthetics["composition"] = "Eye-level, natural perspective, balanced composition"
+        
+        # Add technical camera details to style
+        if "style_medium" in updated_prompt:
+            camera_info = []
+            if "camera" in camera_settings:
+                camera_info.append(f"shot on {camera_settings['camera']}")
+            if "lens" in camera_settings:
+                camera_info.append(f"{camera_settings['lens']} lens")
+            if "resolution" in camera_settings:
+                camera_info.append(f"{camera_settings['resolution']} resolution")
+            if "frameRate" in camera_settings:
+                camera_info.append(f"{camera_settings['frameRate']}fps")
+            
+            if camera_info:
+                updated_prompt["style_medium"] += f", {', '.join(camera_info)}"
+        
+        return updated_prompt
+    
+    # Apply camera settings to both start and end frame prompts
+    if "fibo_start_frame" in checkpoint_data:
+        checkpoint_data["fibo_start_frame"] = update_frame_prompt(checkpoint_data["fibo_start_frame"])
+    
+    if "fibo_end_frame" in checkpoint_data:
+        checkpoint_data["fibo_end_frame"] = update_frame_prompt(checkpoint_data["fibo_end_frame"])
+    
+    return checkpoint_data
 
 @app.post("/api/generate-plan")
 async def generate_plan(request: ScriptRequest):
@@ -302,12 +386,13 @@ async def generate_frames(request: GenerateFramesRequest, background_tasks: Back
         generate_frames_background,
         request.project_id,
         request.checkpoint_id,
-        generation_id
+        generation_id,
+        request.camera_settings
     )
     
     return {"generation_id": generation_id, "status": "started"}
 
-async def generate_frames_background(project_id: str, checkpoint_id: int, generation_id: str):
+async def generate_frames_background(project_id: str, checkpoint_id: int, generation_id: str, camera_settings: Optional[Dict[str, Any]] = None):
     """Background task for generating FIBO frames."""
     try:
         # Update status
@@ -340,6 +425,11 @@ async def generate_frames_background(project_id: str, checkpoint_id: int, genera
             raise Exception(checkpoint_data["error"])
         
         print(f"   ✅ Checkpoint data retrieved")
+        
+        # Apply custom camera settings if provided
+        if camera_settings:
+            print(f"   🎥 Applying custom camera settings: {camera_settings.get('camera', 'N/A')}")
+            checkpoint_data = apply_camera_settings_to_prompts(checkpoint_data, camera_settings)
         
         # Update progress
         generation_status[generation_id].progress = 0.3

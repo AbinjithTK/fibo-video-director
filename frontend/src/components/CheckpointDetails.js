@@ -5,7 +5,8 @@ import {
   Copy, 
   Loader2, 
   CheckCircle, 
-  AlertCircle
+  AlertCircle,
+  Settings
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { 
@@ -16,6 +17,7 @@ import {
   cache
 } from '../services/api';
 import ImageGallery from './ImageGallery';
+import CameraControls from './CameraControls';
 import './CheckpointDetails.css';
 
 function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
@@ -24,6 +26,8 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
   const [generating, setGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState(null);
   const [generationId, setGenerationId] = useState(null);
+  const [showCameraControls, setShowCameraControls] = useState(false);
+  const [cameraSettings, setCameraSettings] = useState({});
 
   // Cache key for this checkpoint
   const cacheKey = `generation_${projectId}_${checkpoint.checkpoint_id}`;
@@ -71,9 +75,18 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
   const handleGenerateFrames = async () => {
     try {
       setGenerating(true);
-      const response = await generateFrames(projectId, checkpoint.checkpoint_id);
+      
+      // Use custom camera settings if available
+      const settingsToUse = Object.keys(cameraSettings).length > 0 ? cameraSettings : null;
+      
+      const response = await generateFrames(projectId, checkpoint.checkpoint_id, settingsToUse);
       setGenerationId(response.generation_id);
-      toast.success('Frame generation started!');
+      
+      if (settingsToUse) {
+        toast.success('Frame generation started with custom camera settings!');
+      } else {
+        toast.success('Frame generation started!');
+      }
     } catch (error) {
       console.error('Error starting generation:', error);
       toast.error('Failed to start frame generation');
@@ -106,7 +119,17 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
     }
   };
 
-  const copyToClipboard = async (text, label) => {
+  const handleCameraChange = (newSettings) => {
+    setCameraSettings(newSettings);
+    // Here you could update the FIBO prompts with new camera settings
+    // For now, we'll just store them locally
+  };
+
+  const applyCustomCameraSettings = () => {
+    // This would send the custom camera settings to the backend
+    // to regenerate the FIBO prompts with new camera parameters
+    toast.success('Camera settings applied! Regenerate frames to see changes.');
+  };
     try {
       await navigator.clipboard.writeText(text);
       toast.success(`${label} copied to clipboard!`);
@@ -260,6 +283,15 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
         </div>
         
         <div className="generation-controls">
+          <button
+            className={`camera-controls-toggle ${showCameraControls ? 'active' : ''}`}
+            onClick={() => setShowCameraControls(!showCameraControls)}
+            title="Camera Controls"
+          >
+            <Settings size={16} />
+            Camera
+          </button>
+          
           {!generating && !generationStatus?.start_frame_url ? (
             <button 
               className="generate-frames-btn"
@@ -305,6 +337,44 @@ function CheckpointDetails({ checkpoint, projectId, onGenerationComplete }) {
         <h4>Scene Description</h4>
         <p>{prompts.scene_description}</p>
       </div>
+
+      {showCameraControls && (
+        <div className="camera-controls-section">
+          <CameraControls
+            onCameraChange={(settings) => setCameraSettings(settings)}
+            initialSettings={{
+              camera: 'ARRI Alexa',
+              lens: '50mm',
+              focalLength: 50,
+              aperture: 2.8,
+              angle: 'Eye-level',
+              movement: 'Static',
+              frameRate: 24,
+              resolution: '4K'
+            }}
+          />
+          
+          {Object.keys(cameraSettings).length > 0 && (
+            <div className="camera-settings-preview">
+              <h4>📸 Camera Settings Impact</h4>
+              <div className="settings-impact">
+                <div className="impact-item">
+                  <strong>FIBO Prompt Updates:</strong>
+                  <ul>
+                    <li>Camera angle: <span className="highlight">{cameraSettings.angle}</span></li>
+                    <li>Lens focal length: <span className="highlight">{cameraSettings.focalLength}mm</span></li>
+                    <li>Depth of field: <span className="highlight">f/{cameraSettings.aperture}</span></li>
+                    <li>Camera movement: <span className="highlight">{cameraSettings.movement}</span></li>
+                  </ul>
+                </div>
+                <div className="regenerate-notice">
+                  <p>💡 Click "Generate Frames" to apply these camera settings to your FIBO prompts</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="frames-section">
         {generating ? (

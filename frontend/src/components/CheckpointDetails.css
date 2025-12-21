@@ -59,6 +59,39 @@
   gap: 1rem;
 }
 
+/* Generation Controls */
+.generation-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.camera-controls-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.camera-controls-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(74, 144, 226, 0.5);
+}
+
+.camera-controls-toggle.active {
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  border-color: #4a90e2;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
 .generate-frames-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -327,7 +360,89 @@
   line-height: 1.4;
 }
 
-/* Responsive Design */
+/* Camera Controls Section */
+.camera-controls-section {
+  margin: 20px 0;
+}
+
+.camera-settings-preview {
+  background: rgba(74, 144, 226, 0.1);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.camera-settings-preview h4 {
+  color: #4a90e2;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.settings-impact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.impact-item {
+  color: #ffffff;
+}
+
+.impact-item strong {
+  color: #4a90e2;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.impact-item ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.impact-item li {
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.highlight {
+  color: #4a90e2;
+  font-weight: 600;
+  background: rgba(74, 144, 226, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.regenerate-notice {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.regenerate-notice p {
+  color: #ffc107;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .camera-controls-section {
+    margin: 16px 0;
+  }
+  
+  .camera-settings-preview {
+    padding: 12px;
+  }
+  
+  .impact-item li {
+    font-size: 13px;
+  }
+}
 @media (max-width: 768px) {
   .details-header {
     flex-direction: column;

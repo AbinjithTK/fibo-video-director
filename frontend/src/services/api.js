@@ -62,13 +62,20 @@ export const getCheckpointPrompts = async (projectId, checkpointId) => {
 };
 
 // Generate frames
-export const generateFrames = async (projectId, checkpointId) => {
+export const generateFrames = async (projectId, checkpointId, cameraSettings = null) => {
+  const requestBody = { 
+    project_id: projectId, 
+    checkpoint_id: checkpointId 
+  };
+  
+  // Add camera settings if provided
+  if (cameraSettings) {
+    requestBody.camera_settings = cameraSettings;
+  }
+  
   return request('/api/generate-frames', {
     method: 'POST',
-    body: JSON.stringify({ 
-      project_id: projectId, 
-      checkpoint_id: checkpointId 
-    }),
+    body: JSON.stringify(requestBody),
   });
 };
 
